@@ -20,7 +20,7 @@ from host import alive
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-with open("config.json", "r") as f:
+with open("json/config.json", "r") as f:
   config = json.load(f)
 
 DBclient = MongoClient(config['MONGOURI'], server_api=ServerApi('1'))
@@ -125,6 +125,11 @@ client = commands.CommandsClient(prefix=prefixes)
 
 @client.listen("ready")
 async def ready():
+  with open("json/data.json", "r") as f:
+    data = json.load(f)
+    data['uptime'] = time.time()
+  with open("json/data.json", "w") as r:
+    json.dump(data, r, indent=2)
   print("Up and running (finally)") # Prints when the client is ready. You should know this
 
   await client.set_status(

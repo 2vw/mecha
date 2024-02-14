@@ -10,6 +10,6 @@ def setup(client) -> commands.Cog:
   @fun.command()
   async def no(ctx):
     """Adds you to the fun."""
-    await ctx.reply("nuh uh")
+    await ctx.reply("nuh uh :)")
 
   return fun
