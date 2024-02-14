@@ -69,7 +69,7 @@ def run():
   """
   This function runs the application on the specified host and port.
   """
-  app.run(host='0.0.0.0', port=3000)
+  app.run(host='0.0.0.0', port=3000, debug=True)
 
 def alive():  
     """

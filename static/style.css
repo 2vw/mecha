@@ -15,6 +15,11 @@ body {
     -webkit-text-fill-color: transparent;
 }
 
+span {
+    font-weight: bold;
+    font-size: 50px;
+}
+
 .hero {
     display: flex;
     justify-content: center;
