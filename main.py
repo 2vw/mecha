@@ -142,8 +142,7 @@ async def levelstuff(message): # running this in the on_message event drops the 
         color = "#44ff44",
         icon_url = message.author.avatar.url
       )
-      msg = await channel.send(f"**{message.author.name}** has leveled up to **{get_user(message.author)['levels']['level']}**") # praise kink? its whatever
-      await msg.edit(embed=embed)
+      msg = await channel.send(embed=embed) # praise kink? its whatever
     except KeyError:
       print("keyerror :(") # this should never happen, if it does, tell William, if it doesnt, tell William anyways.
   if userdb.find_one(
