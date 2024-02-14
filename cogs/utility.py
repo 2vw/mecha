@@ -158,7 +158,7 @@ See you in `{time}`!
             count += 1
             if count <= 3:
                 emoji = ["0", "🥇", "🥈", "🥉"]
-                lb.append(f"**#{emoji[count]}** -> {doc['username']}: **LVL{doc['levels']['level']}** | **{doc['levels']['xp']}XP**")
+                lb.append(f"{"#" * count} **{emoji[count]}**\n{doc['username']}: **LVL{doc['levels']['level']}** | **{doc['levels']['xp']}XP**")
             else:
                 lb.append(f"**#{count}** -> {doc['username']}: **LVL{doc['levels']['level']}** | **{doc['levels']['xp']}XP**")
         embed = voltage.SendableEmbed(
