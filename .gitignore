@@ -163,4 +163,5 @@ cython_debug/
 /.vscode
 /cogs/__pycache__
 /ping.py
+.gitignore
 /.gitignore
