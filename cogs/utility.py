@@ -156,9 +156,18 @@ See you in `{time}`!
         count = 0
         for doc in userdb.find().sort([("levels.xp", pymongo.DESCENDING)]).limit(10):
             count += 1
-            lb.append(f"**#{count}** -> {doc['username']}: *LVL{doc['levels']['level']}* | *{doc['levels']['xp']}XP*")
+            if count <= 3:
+                emoji = ["0", "🥇", "🥈", "🥉"]
+                lb.append(f"**#{emoji[count]}** -> {doc['username']}: **LVL{doc['levels']['level']}** | **{doc['levels']['xp']}XP**")
+            else:
+                lb.append(f"**#{count}** -> {doc['username']}: **LVL{doc['levels']['level']}** | **{doc['levels']['xp']}XP**")
+        embed = voltage.SendableEmbed(
+            title = "View the Leaderboard",
+            description='\n'.join(lb),
+            color="#516BF2"
+        )
         await ctx.send(
-            '\n'.join(lb)
+            embed=embed
         )
         await ctx.send()
     
