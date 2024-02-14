@@ -169,8 +169,8 @@ async def ready():
     data['uptime'] =  int(time.time())
   with open("json/data.json", "w") as r:
     json.dump(data, r, indent=2)
-  await status()
   print("Up and running (finally)") # Prints when the client is ready. You should know this
+  await status()
 
 
 async def levelstuff(message): # running this in the on_message event drops the speed down to your grandmothers crawl. keep this in a function pls
@@ -181,7 +181,7 @@ async def levelstuff(message): # running this in the on_message event drops the 
         title = f"{message.author.name} has leveled up!",
         description = f"{message.author.name} has leveled up to level **{get_user(message.author)['levels']['level']}**!",
         color = "#44ff44",
-        icon_url = message.author.avatar.url
+        icon_url = message.author.avatar.url or "https://ibb.co/mcTxwnf"
       )
       msg = await channel.send(embed=embed) # praise kink? its whatever
     except KeyError:
@@ -283,10 +283,26 @@ async def on_message_error(error: Exception, message):
     return await message.reply(message.author.mention, embed=embed)
 
 # Cog loading schenanigans
-client.add_extension("cogs.owner")
-client.add_extension("cogs.fun")
-client.add_extension("cogs.utility")
-client.add_extension("cogs.giveaway")
+try:
+  client.add_extension("cogs.owner")
+except Exception as e:
+  print(e)
+try:
+  client.add_extension("cogs.fun")
+except Exception as e:
+  print(e)
+try:
+  client.add_extension("cogs.utility")
+except Exception as e:
+  print(e)
+try:
+  client.add_extension("cogs.giveaway")
+except Exception as e:
+  print(e)
+try:
+  client.add_extension("cogs.moderation")
+except Exception as e:
+  print(e)
 
-#alive() #yeah blah blah stolen from old Mecha but hey, it works so why not copy and paste it, we're developers.
+alive() #yeah blah blah stolen from old Mecha but hey, it works so why not copy and paste it, we're developers.
 client.run(config['TOKEN']) # Replace with your token in config, config.json to be exact, for everyone else, you know what this does stop fucking stalling pls :).
