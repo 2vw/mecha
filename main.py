@@ -285,22 +285,32 @@ async def on_message_error(error: Exception, message):
 # Cog loading schenanigans
 try:
   client.add_extension("cogs.owner")
+  print("Loaded Owner Cog!")
 except Exception as e:
   print(e)
 try:
   client.add_extension("cogs.fun")
+  print("Loaded Fun Cog!")
 except Exception as e:
   print(e)
 try:
   client.add_extension("cogs.utility")
+  print("Loaded Utility Cog!")
 except Exception as e:
   print(e)
 try:
   client.add_extension("cogs.giveaway")
+  print("Loaded Giveaway Cog!")
 except Exception as e:
   print(e)
 try:
   client.add_extension("cogs.moderation")
+  print("Loaded Moderation Cog!")
+except Exception as e:
+  print(e)
+try:
+  client.add_extension("cogs.economy")
+  print("Loaded Economy Cog!")
 except Exception as e:
   print(e)
 

@@ -239,9 +239,7 @@ def setup(client) -> commands.Cog:
         ]
         percentage = random.randint(1, 100)
         print(percentage)
-        with open("json/bank.json", "r") as f:
-            data = json.load(f)
-        if ctx.author.id not in data:
+        if not userdb.find_one({"userid": ctx.author.id}):
             await ctx.send(
                 "You dont have a bank account registered in our database! I can resgister you now, is that okay? *(Yes/No)*"
             )
@@ -257,9 +255,7 @@ def setup(client) -> commands.Cog:
                 description=f"{random.choice(people)} gave you `{amount}` coins! Now get a job you bum.",
                 color="#00FF00",
             )
-            with open("json/bank.json", "w") as f:
-                data[ctx.author.id]["coins"] += amount
-                json.dump(data, f, indent=2)
+            userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": amount}})
             return await ctx.send(content="[]()", embed=embed)
         else:
             embed = voltage.SendableEmbed(
@@ -273,9 +269,7 @@ def setup(client) -> commands.Cog:
     @eco.command(description="Go to work u bum **requires Resume**")
     async def work(ctx):
         amount = random.randint(500, 1000)
-        with open("json/bank.json", "r") as f:
-            data = json.load(f)
-        if ctx.author.id not in data:
+        if not userdb.find_one({"userid": ctx.author.id}):
             await ctx.send(
                 "You dont have a bank account registered in our database! I can resgister you now, is that okay? *(Yes/No)*"
             )
@@ -284,19 +278,21 @@ def setup(client) -> commands.Cog:
                 return await ctx.send(add_user())
             else:
                 return await ctx.send("Oh... Hevermind then!")
-        elif data[ctx.author.id]["job"] == "Unemployed":
+        else:
+            userdata = userdb.find_one({"userid": ctx.author.id})
+        if userdata['economy']['data']['job'] == "Unemployed":
             return await ctx.send("You're unemployed, get a job u bum!")
-        elif "Resume" in data[ctx.author.id]["items"]:
+        elif "Resume" in userdata['economy']['data']["inventory"]:
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
                 icon_url=ctx.author.display_avatar.url,
-                description=f"You worked as a {data[ctx.author.id]['job']} and made `{amount}`!",
+                description=f"You worked as a {userdata['economy']['data']['job']} and made `{amount}`!",
                 color="#00FF00",
             )
             await ctx.send(content="[]()", embed=embed)
-            with open("json/bank.json", "w") as f:
-                data[ctx.author.id]["coins"] += amount
-                json.dump(data, f, indent=2)
+            userdb.update_one(
+                {"userid": ctx.author.id}, {"$inc": {"economy.wallet": amount}}
+            )
         else:
             return await ctx.send(
                 "You need a `resume` to work, your not workin' here bub."
@@ -304,14 +300,12 @@ def setup(client) -> commands.Cog:
 
     @eco.command(aliases=["lb", "leaderboard", "ranking"])
     async def leaderboard(ctx):
-        with open("json/bank.json", "r") as f:
-            data = json.load(f)
-        em = []
-        for user in data:
-            stuff = data[user]["username"], data[user]["coins"]
-            em.append(stuff)
-        em.sort(reverse=True)
-        print(em)
+        lb = []
+        for doc in userdb.find().sort([
+            'economy.wallet',
+            ('wallet', pymongo.DESCENDING)]):
+            lb.append(doc)
+        print(lb)
         await ctx.send(
             "this is coming soon i have no idea how to make this work :) :boohoo:"
         )
@@ -337,10 +331,18 @@ def setup(client) -> commands.Cog:
 """,
             )
             return await ctx.send(content="[]()", embed=embed)
-        with open("json/bank.json", "r") as f:
-            data = json.load(f)
-        if "Unemployed" == data[ctx.author.id]["job"]:
-            if "Resume" in data[ctx.author.id]["items"]:
+        if userdb.find_one({"userid": ctx.author.id}):
+            userdata = db.find_one({"userid": ctx.author.id})
+        elif not userdb.find_one({"userid": ctx.author.id}):
+            await ctx.send(
+                "You dont have a bank account registered in our database! I can resgister you now, is that okay? *(Yes/No)*"
+            )
+            message = await client.wait_for(
+                "message", check=lambda message: message.author if ctx.author.id == ctx.author.id else None, timeout=15
+            )
+            
+        if "Unemployed" == userdata['economy']['data']["job"]:
+            if "Resume" in userdata['economy']['data']["inventory"]:
                 if job.lower() in [
                     "teacher",
                     "twitch streamer",
@@ -355,13 +357,18 @@ def setup(client) -> commands.Cog:
                         job = "Twitch Streamer"
                     elif job.lower() == "porn star":
                         job = "Porn Star"
-                    with open("json/bank.json", "w") as f:
-                        data[ctx.author.id]["job"] = job.capitalize()
-                        json.dump(data, f, indent=2)
+                    userdb.update_one(
+                        {"userid": ctx.author.id},
+                        {
+                            "$set": {
+                                "economy.data.job": job
+                            }
+                        }
+                    )
                     return await ctx.send(
                         f"You are now working as a `{job.capitalize()}`!"
                     )
-            elif "Resume" not in data[ctx.author.id]["items"]:
+            elif "Resume" not in userdata['economy']['data']["inventory"]:
                 return await ctx.send("You need a resume to get a job! Buy a resume!")
         else:
             return await ctx.send("You already have a job!")
@@ -382,8 +389,7 @@ Resume - `250`
             )
             return await ctx.send(content="[]()", embed=embed)
         else:
-            with open("json/bank.json", "r") as f:
-                data = json.load(f)
+            userdata = userdb.find_one({"userid": ctx.author.id})
             if item.lower() in [
                 "r",
                 "resume",
@@ -393,17 +399,16 @@ Resume - `250`
                 "res",
                 "form",
             ]:
-                if data[ctx.author.id]["coins"] < 250:
+                if userdata['economy']["wallet"] < 250:
                     return await ctx.send("ur too poor, nerd.")
                 else:
-                    if "Resume" in data[ctx.author.id]["items"]:
+                    if "Resume" in userdata['economy']['data']["inventory"]:
                         return await ctx.send(
                             "You already have a resume! You don't need another!"
                         )
-                    with open("json/bank.json", "w") as f:
-                        data[ctx.author.id]["coins"] -= 250
-                        data[ctx.author.id]["items"].append("Resume")
-                        json.dump(data, f, indent=2)
+                    userdb.update_one(
+                        {"userid": ctx.author.id}, {"$inc": {"wallet": -250}, "$push": {"inventory": {"Resume":1}}}
+                    )
                     return await ctx.send("You bought a `resume` for `250` coins!")
             if item.lower() in [
                 "pb",
@@ -414,17 +419,16 @@ Resume - `250`
                 "playb",
                 "pboy",
             ]:
-                if data[ctx.author.id]["coins"] < 1000:
+                if userdata['economy']["wallet"] < 1000:
                     return await ctx.send("ur too poor, nerd.")
                 else:
-                    if "Playboy" in data[ctx.author.id]["items"]:
+                    if "Playboy" in userdata['economy']['data']["inventory"]:
                         return await ctx.send(
                             "You already have a magazine! You don't need another!"
                         )
-                    with open("json/bank.json", "w") as f:
-                        data[ctx.author.id]["coins"] -= 1000
-                        data[ctx.author.id]["items"].append("Playboy")
-                        json.dump(data, f, indent=2)
+                    userdb.update_one(
+                        {"userid": ctx.author.id}, {"$inc": {"wallet": -1000}, "$push": {"inventory": {"Playboy":1}}}
+                    )
                     return await ctx.send(
                         "You bought a `Playboy Magazine` for `1000` coins!"
                     )
