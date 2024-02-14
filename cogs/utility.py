@@ -73,8 +73,8 @@ def setup(client) -> commands.Cog:
         description="Get a users avatar!", 
         name="avatar", 
         aliases=["av", "getav", "ua"],
-        usage="m!avatar <user>",
-        example="m!avatar @css"
+        #usage="m!avatar <user>",
+        #example="m!avatar @css"
     )
     async def avatar(ctx, member: voltage.Member):
         embed = voltage.SendableEmbed(
@@ -88,8 +88,8 @@ def setup(client) -> commands.Cog:
         description="🕒 | Set a reminder up to a month! (1d, 1h, 1m, 1s) 'm!reminder 10 'm' do the dishes'",
         name="reminder",
         aliases=["remind", "alert", "timer", "schedule", "setreminder", "setalert", "settimer", "setschedule"],
-        usage="m!reminder <time> <message>",
-        example="m!reminder 10m do the dishes"
+        #usage="m!reminder <time> <message>",
+        #example="m!reminder 10m do the dishes"
     )
     async def reminder(ctx, time, **message):
         if not message:
