@@ -27,11 +27,12 @@ DBclient = MongoClient(config['MONGOURI'], server_api=ServerApi('1'))
 
 db = DBclient['beta']
 userdb = db['users']
+serverdb = db['servers']
 
 def update_level(user:voltage.User):
   if userdb.find_one({'userid':user.id}):
     user_data = userdb.find_one({'userid':user.id})
-    if user_data['levels']['xp'] > (100 * user_data['levels']['level']):
+    if 0 >= (5 * (user_data['levels']['level'] ^ 2) + (50 * user_data['levels']['level']) + 100 - user_data['levels']['xp']):
       userdb.update_one({'userid':user.id}, {'$inc':{'levels.level':1}})
       return True
     else:
@@ -135,7 +136,15 @@ async def levelstuff(message): # running this in the on_message event drops the 
   if update_level(message.author):
     try:
       channel = client.get_channel(config['LEVEL_CHANNEL'])
-      await channel.send(f"{message.author.name} has leveled up to **{get_user(message.author)['levels']['level']}**!") # praise kink? its whatever
+      embed = voltage.SendableEmbed(
+        title = f"{message.author.name} has leveled up!",
+        description = f"**{get_user(message.author)['levels']['level']}**",
+        color = "#44ff44",
+        icon_url = message.author.avatar,
+        media = "https://ibb.co/mcTxwnf"
+      )
+      msg = await channel.send(f"**{message.author.name}** has leveled up to **{get_user(message.author)['levels']['level']}**") # praise kink? its whatever
+      await msg.edit(embed=embed)
     except KeyError:
       print("keyerror :(") # this should never happen, if it does, tell William, if it doesnt, tell William anyways.
   if userdb.find_one(
