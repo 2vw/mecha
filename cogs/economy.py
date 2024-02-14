@@ -6,7 +6,7 @@ from pymongo.server_api import ServerApi
 with open("json/config.json", "r") as f:
     config = json.load(f)
 
-DBclient = MongoClient(config["MONGOURI"], server_api=ServerApi("1"))
+DBclient = MongoClient(config["MONGOURI"])
 
 db = DBclient["beta"]
 userdb = db["users"]
@@ -63,13 +63,13 @@ def setup(client) -> commands.Cog:
 
     eco = commands.Cog("Economy", "Wanna get rich! TOO BAD.")
 
-    @eco.command()
+    @eco.command(description="View your balance.", aliases=["bal", 'b', 'money', 'mybal'], name="balance")
     async def bal(ctx):
-        if ctx.author.id not in userdb.find_one({"userid": ctx.author.id}):
+        if not userdb.find_one({"userid": ctx.author.id}):
             await ctx.send(
                 "You dont have a bank account registered in our database! Would you like me to create one?"
             )
-            message = await client.wait_for("message", check=lambda message: message.author if ctx.author.id == ctx.author.id else None, timeout=15)
+            message = await client.wait_for("message", check=lambda message: message.author.id != client.user.id, timeout=15)
             if any(x in message.content.lower() for x in ["yes", "y", "yea", "yeah", "yup"]):
                 return await ctx.send(add_user())
             else:
@@ -85,7 +85,6 @@ def setup(client) -> commands.Cog:
                         "name": item,
                         "amount": items[item]
                     }
-                    print(item)
                 itemstuff = """"""
                 for item in itemlist:
                     itemstuff = itemstuff + f"**{item}:** *x{itemlist[item]['amount']}*\n"
@@ -238,12 +237,11 @@ def setup(client) -> commands.Cog:
             "Imagine begging in 2022, gofundme is where it is at",
         ]
         percentage = random.randint(1, 100)
-        print(percentage)
         if not userdb.find_one({"userid": ctx.author.id}):
             await ctx.send(
                 "You dont have a bank account registered in our database! I can resgister you now, is that okay? *(Yes/No)*"
             )
-            message = await client.wait_for("message", check=lambda message: message.author if ctx.author.id == ctx.author.id else None, timeout=15)
+            message = await client.wait_for("message", check=lambda message: message.author.id != client.user.id, timeout=15)
             if any(x in message.content.lower() for x in ["yes", "y", "yea", "yeah", "yup"]):
                 return await ctx.send(add_user())
             else:
@@ -273,7 +271,7 @@ def setup(client) -> commands.Cog:
             await ctx.send(
                 "You dont have a bank account registered in our database! I can resgister you now, is that okay? *(Yes/No)*"
             )
-            message = await client.wait_for("message", check=lambda message: message.author if ctx.author.id == ctx.author.id else None, timeout=15)
+            message = await client.wait_for("message", check=lambda message: message.author.id != client.user.id, timeout=15)
             if any(x in message.content.lower() for x in ["yes", "y", "yea", "yeah", "yup"]):
                 return await ctx.send(add_user())
             else:
@@ -298,20 +296,19 @@ def setup(client) -> commands.Cog:
                 "You need a `resume` to work, your not workin' here bub."
             )
 
-    @eco.command(aliases=["lb", "leaderboard", "ranking"])
+    @eco.command(name="leaderboard",aliases=["lb", "ranking"], description="Check out the richest users in all of Mecha!")
     async def leaderboard(ctx):
         lb = []
-        for doc in userdb.find().sort([
-            'economy.wallet',
-            ('wallet', pymongo.DESCENDING)]):
-            lb.append(doc)
-        print(lb)
+        count = 0
+        for doc in userdb.find().sort([("economy.wallet", pymongo.DESCENDING)]).limit(10):
+            count += 1
+            lb.append(f"**#{count}** -> {doc['username']}: {doc['economy']['wallet']}")
         await ctx.send(
-            "this is coming soon i have no idea how to make this work :) :boohoo:"
+            '\n'.join(lb)
         )
 
     @eco.command(
-        aliases=["apply", "getjob", "joblist", "gj", "job", "workas", "howjob"]
+        aliases=["apply", "getjob", "joblist", "gj", "workas", "howjob"]
     )
     async def job(ctx, job=None):
         if job is None:
@@ -338,7 +335,7 @@ def setup(client) -> commands.Cog:
                 "You dont have a bank account registered in our database! I can resgister you now, is that okay? *(Yes/No)*"
             )
             message = await client.wait_for(
-                "message", check=lambda message: message.author if ctx.author.id == ctx.author.id else None, timeout=15
+                "message", check=lambda message: message.author.id != client.user.id, timeout=15
             )
             
         if "Unemployed" == userdata['economy']['data']["job"]:
@@ -373,7 +370,7 @@ def setup(client) -> commands.Cog:
         else:
             return await ctx.send("You already have a job!")
 
-    @eco.command(aliases=["shop", "buy"])
+    @eco.command(aliases=["sh", "buy"])
     async def shop(ctx, item=None):
         if item is None:
             embed = voltage.SendableEmbed(
