@@ -72,7 +72,7 @@ See you in `{time}{timetype}`!
                 colour="#00FF00",
             )
             editwith = voltage.SendableEmbed(
-                title="Reminded on {pendulum.now().to_day_datetime_string()}!",
+                title=f"Reminded on {pendulum.now().to_day_datetime_string()}!",
                 url=f"https://app.revolt.chat/server/{ctx.server.id}/channels/{ctx.channel.id}/{ctx.message.id}",
                 description=f"On *{pendulum.now().to_day_datetime_string()}*, {ctx.author.mention} asked me to remind them of:\n`{reminder}`.",
                 colour="#FF0000",
