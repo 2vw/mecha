@@ -8,8 +8,8 @@ def setup(client) -> commands.Cog:
     )
 
     @giveaway.command()
-    async def asd(ctx):
-        """Adds you to the fun."""
+    async def giveawaystuffs(ctx):
+        """Adds you to the giveaway"""
         await ctx.reply("nuh uh :)")
 
     return giveaway

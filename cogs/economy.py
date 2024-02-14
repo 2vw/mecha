@@ -73,22 +73,21 @@ def setup(client) -> commands.Cog:
             if any(x in message.content.lower() for x in ["yes", "y", "yea", "yeah", "yup"]):
                 return await ctx.send(add_user())
             else:
-                return await ctx.send("Oh... Hevermind then!")
+                return await ctx.send("Oh... Nevermind then!")
         else:
             items = 0
             userdata = userdb.find_one({"userid": ctx.author.id})
             try:
                 items = userdata['economy']['data']["inventory"]
                 itemlist = {}
+                itemstuff = []
                 for item in items:
                     itemlist[item] = {
                         "name": item,
                         "amount": items[item]
                     }
-                itemstuff = """"""
                 for item in itemlist:
-                    itemstuff = itemstuff + f"**{item}:** *x{itemlist[item]['amount']}*\n"
-                
+                    itemstuff.append(f"**{item}:** *x{itemlist[item]['amount']}*")
             except:
                 items = []
             if len(items) == 0:
@@ -98,16 +97,17 @@ def setup(client) -> commands.Cog:
                 icon_url=ctx.author.display_avatar.url,
                 description=f"""
     **Wallet Balance:** 
-    > {userdata['economy']["wallet"]}
+    > ${userdata['economy']["wallet"]}
 
     **Bank Balance:**
-    > {userdata['wallet']['bank']}
+    > ${userdata['wallet']['bank']}
 
     **Inventory:**
-    > {itemstuff}
+    > {'\n'.join(itemstuff)}
     """,
             )
-            await ctx.send(content="[]()", embed=embed)
+            print("sending embed")
+            await ctx.send(embed=embed)
 
     @eco.command(
         description="25% chance to get **nothing** and 75% to get up to 250 coins!"
@@ -245,7 +245,7 @@ def setup(client) -> commands.Cog:
             if any(x in message.content.lower() for x in ["yes", "y", "yea", "yeah", "yup"]):
                 return await ctx.send(add_user())
             else:
-                return await ctx.send("Oh... Hevermind then!")
+                return await ctx.send("Oh... Nevermind then!")
         if percentage > 25:
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
@@ -275,7 +275,7 @@ def setup(client) -> commands.Cog:
             if any(x in message.content.lower() for x in ["yes", "y", "yea", "yeah", "yup"]):
                 return await ctx.send(add_user())
             else:
-                return await ctx.send("Oh... Hevermind then!")
+                return await ctx.send("Oh... Nevermind then!")
         else:
             userdata = userdb.find_one({"userid": ctx.author.id})
         if userdata['economy']['data']['job'] == "Unemployed":
@@ -296,8 +296,8 @@ def setup(client) -> commands.Cog:
                 "You need a `resume` to work, your not workin' here bub."
             )
 
-    @eco.command(name="leaderboard",aliases=["lb", "ranking"], description="Check out the richest users in all of Mecha!")
-    async def leaderboard(ctx):
+    @eco.command(name="richest",aliases=["richlist", "richrank"], description="Check out the richest users in all of Mecha!")
+    async def richest(ctx):
         lb = []
         count = 0
         for doc in userdb.find().sort([("economy.wallet", pymongo.DESCENDING)]).limit(10):

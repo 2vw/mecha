@@ -1,5 +1,16 @@
 import voltage, pymongo, os, asyncio, json, datetime, time, pendulum, re
 from voltage.ext import commands
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+
+with open("json/config.json", "r") as f:
+    config = json.load(f)
+
+DBclient = MongoClient(config["MONGOURI"])
+
+db = DBclient["beta"]
+userdb = db["users"]
+serverdb = db["servers"]
 
 def setup(client) -> commands.Cog:
     utility = commands.Cog(
@@ -138,5 +149,17 @@ See you in `{time}`!
                 await msg.edit(content=ctx.author.mention, embed=editwith)
             except:
                 pass
-
+    
+    @utility.command()
+    async def leaderboard(ctx):
+        lb = []
+        count = 0
+        for doc in userdb.find().sort([("levels.xp", pymongo.DESCENDING)]).limit(10):
+            count += 1
+            lb.append(f"**#{count}** -> {doc['username']}: *LVL{doc['levels']['level']}* | *{doc['levels']['xp']}XP*")
+        await ctx.send(
+            '\n'.join(lb)
+        )
+        await ctx.send()
+    
     return utility
