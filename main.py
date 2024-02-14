@@ -15,6 +15,7 @@
 import random, pymongo, json, time, asyncio, datetime
 import voltage, os
 from voltage.ext import commands
+from voltage.errors import CommandNotFound, NotBotOwner, NotEnoughArgs, NotEnoughPerms, NotFoundException, BotNotEnoughPerms, RoleNotFound, UserNotFound, MemberNotFound, ChannelNotFound
 from host import alive
 
 from pymongo.mongo_client import MongoClient
@@ -122,6 +123,21 @@ def give_xp(user: voltage.User):
 prefixes = ["m!"]
 client = commands.CommandsClient(prefix=prefixes)
 
+async def status():
+  while True:
+    statuses = [
+      f"Playing with {len(client.cache.servers)} servers and {len(client.members)} users!",
+      f"Watching {len(client.members)} users!",
+      f"My waifu is better than yours!!! | {len(client.cache.servers)} servers",
+      f"Jan | {len(client.cache.servers)} servers",
+      f"guys my father just came back with the milk O_O - delta2571 | {len(client.cache.servers)} servers",
+      f"Revolt > shitcord | {len(client.cache.servers)} servers",
+      f"Jans Onlyfans: onlyfans.com/linustechtips | {len(client.cache.servers)} servers",
+      f"William Says HI! | {len(client.cache.servers)} servers",
+    ]
+    status = random.choice(statuses)
+    await client.set_status(status, voltage.PresenceType.online)
+    await asyncio.sleep(5)
 
 @client.listen("ready")
 async def ready():
@@ -132,10 +148,7 @@ async def ready():
     json.dump(data, r, indent=2)
   print("Up and running (finally)") # Prints when the client is ready. You should know this
 
-  await client.set_status(
-  text="@ | Another day, another dollar!", # DONT DO THIS! We're only doing it because its convienient and we need to port the switcher :)
-  presence=voltage.PresenceType.online # you can change this if you want but its not required, just read the fucking docs.
-)
+  await status() # Sets the status loop
 
 async def levelstuff(message): # running this in the on_message event drops the speed down to your grandmothers crawl. keep this in a function pls
   if update_level(message.author):
@@ -182,6 +195,59 @@ async def xp(ctx):
   level = user['levels']['level'] # this is so stupid
   xp = user['levels']['xp'] # this is so stupid
   await ctx.reply(f"**{ctx.author.name}** has **{xp}** XP and is currently level **{level}**!") # praise kink? its whatever
+
+errormsg = [
+  "Error! Error!",
+  "LOOK OUT!!! ERROR!!",
+  "Whoops!",
+  "Oopsie!",
+  "Something went wrong!",
+  "Something happened..",
+  "What happened? I know!",
+  "404!",
+  "ERROR.. ERROR..",
+  "Error Occured!",
+  "An Error Occured!",
+]
+
+# error handling shit
+@client.error("message")
+async def on_message_error(error: Exception, message):
+  if isinstance(error, CommandNotFound):
+    embed = voltage.SendableEmbed(
+      title=random.choice(errormsg),
+      description="That command doesnt exist!",
+      colour="#516BF2"
+    )
+    return await message.reply(message.author.mention, embed=embed)
+  elif isinstance(error, NotEnoughArgs):
+    embed = voltage.SendableEmbed(
+      title=random.choice(errormsg),
+      description="YOU'RE MISSING ARGS!",
+      colour="#516BF2"
+    )
+    return await message.reply(message.author.mention, embed=embed)
+  elif isinstance(error, NotFoundException):
+    embed = voltage.SendableEmbed(
+      title=random.choice(errormsg),
+      description=error,
+      colour="#516BF2"
+    )
+    return await message.reply(message.author.mention, embed=embed)
+  elif isinstance(error, NotEnoughPerms):
+    embed = voltage.SendableEmbed(
+      title=random.choice(errormsg),
+      description=error,
+      colour="#516BF2"
+    )
+    return await message.reply(message.author.mention, embed=embed)
+  elif isinstance(error, NotBotOwner):
+    embed = voltage.SendableEmbed(
+      title=random.choice(errormsg),
+      description="You dont own me! You cant use my owner only commands!",
+      colour="#516BF2"
+    )
+    return await message.reply(message.author.mention, embed=embed)
 
 # Cog loading schenanigans
 client.add_extension("cogs.owner")

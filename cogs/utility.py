@@ -69,6 +69,15 @@ def setup(client) -> commands.Cog:
             except Exception as e:
                 print(e)
 
+    @utility.command(description="Get a users avatar!", name="avatar", aliases=["av", "getav", "ua"])
+    async def avatar(ctx, member: voltage.Member):
+        embed = voltage.SendableEmbed(
+            title=f"{member.display_name}'s avatar!",
+            media=member.display_avatar.url,
+            colour="#516BF2",
+        )
+        await ctx.reply(content="[]()", embed=embed)
+
     @utility.command(
         description="🕒 | Set a reminder up to a month! (1d, 1h, 1m, 1s) 'm!reminder 10 'm' do the dishes'",
         name="reminder",
