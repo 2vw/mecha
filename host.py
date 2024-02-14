@@ -8,27 +8,17 @@ from flask import (
     request
 )
 
-from flask_sitemap import Sitemap
 from threading import Thread
 import logging
 
 
 
 app = Flask(__name__, '/static')
-ext = Sitemap(app=app)
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 servers=78
 users=9074
-
-@ext.register_generator
-def index():
-    """
-    A function that serves as a generator for the 'index' endpoint.
-    """
-    # Not needed if you set SITEMAP_INCLUDE_RULES_WITHOUT_PARAMS=True
-    yield 'index', {}
 
 @app.route('/')
 def home():
@@ -69,7 +59,7 @@ def run():
   """
   This function runs the application on the specified host and port.
   """
-  app.run(host='0.0.0.0', port=3000, debug=True)
+  app.run(host='0.0.0.0', port=3000)
 
 def alive():  
     """

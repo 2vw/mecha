@@ -138,10 +138,9 @@ async def levelstuff(message): # running this in the on_message event drops the 
       channel = client.get_channel(config['LEVEL_CHANNEL'])
       embed = voltage.SendableEmbed(
         title = f"{message.author.name} has leveled up!",
-        description = f"**{get_user(message.author)['levels']['level']}**",
+        description = f"{message.author.name} has leveled up to level **{get_user(message.author)['levels']['level']}**!",
         color = "#44ff44",
-        icon_url = message.author.avatar,
-        media = "https://ibb.co/mcTxwnf"
+        icon_url = message.author.avatar.url
       )
       msg = await channel.send(f"**{message.author.name}** has leveled up to **{get_user(message.author)['levels']['level']}**") # praise kink? its whatever
       await msg.edit(embed=embed)
@@ -151,7 +150,7 @@ async def levelstuff(message): # running this in the on_message event drops the 
     {"userid":message.author.id}
   ): #super fucking stupid but it makes pylance happy
     update_level(message.author)
-    if random.randint(25,100) <= 50: # 50% chance to get xp off a message, im too lazy to input my own rate limit fuck that
+    if random.randint(25, 100) <= 50: # 50% chance to get xp off a message, im too lazy to input my own rate limit fuck that
       give_xp(message.author)
     if message.content.startswith("m!"): # good boy points if you use commands (will have to replace this later when custom prefixing is implemented)
       give_xp(message.author)
