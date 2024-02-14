@@ -12,6 +12,29 @@
 # tis a mess lol
 # """
 
+# IMPORTANT SHIT
+'''
+onReady : "ready"
+onMessage : "message"
+onMessageEdit : "message_update"
+onmessageDelete : "message_delete"
+onChannelCreate : "channel_create"
+oncChannelEdit : "channel_update"
+onChannelDelete : "channel_delete"
+onGroupChannelJoin : "group_channel_join"
+onGroupChannelLeave : "group_channel_leave"
+onUserStartsTyping : "channel_start_typing"
+onUserStopsTyping : "channel_stop_typing"
+onServerEdit : "server_update"
+onServerDelete : "server_delete"
+onServerMemberEdit : "server_member_update"
+onMemberJoin : "member_join"
+onMemberLeave : "member_leave"
+onRoleEdit : "server_role_update"
+onRoleDelete : "server_role_delete"
+onUserEdit : "user_update"
+'''
+
 import random, pymongo, json, time, asyncio, datetime
 import voltage, os
 from voltage.ext import commands
@@ -182,6 +205,16 @@ async def on_message(message):
     return
   asyncio.create_task(levelstuff(message)) # pièce de résistance
   await client.handle_commands(message) # so everything else doesnt trip over its clumsy ass selves.
+
+@client.listen("server_added")
+async def server_added(server):
+  channel = client.cache.get_channel("01FZBBHNBWMH46TWN0HVJT1W5F")
+  embed = voltage.SendableEmbed(
+    title="New Server alert!",
+    description=f"## Just Joined a new server!\nNow at **{len(client.servers)}** servers!",
+    color="#516BF2",
+  )
+  await channel.send(content="[]()", embed=embed)
 
 @client.command(name="add", description="Adds you to the database!") # whos really using this command? Like really, move this to owner.py when pls..
 async def add(ctx):

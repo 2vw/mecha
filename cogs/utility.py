@@ -69,7 +69,13 @@ def setup(client) -> commands.Cog:
             except Exception as e:
                 print(e)
 
-    @utility.command(description="Get a users avatar!", name="avatar", aliases=["av", "getav", "ua"])
+    @utility.command(
+        description="Get a users avatar!", 
+        name="avatar", 
+        aliases=["av", "getav", "ua"],
+        usage="m!avatar <user>",
+        example="m!avatar @css"
+    )
     async def avatar(ctx, member: voltage.Member):
         embed = voltage.SendableEmbed(
             title=f"{member.display_name}'s avatar!",
@@ -81,7 +87,9 @@ def setup(client) -> commands.Cog:
     @utility.command(
         description="🕒 | Set a reminder up to a month! (1d, 1h, 1m, 1s) 'm!reminder 10 'm' do the dishes'",
         name="reminder",
-        aliases=["remind", "alert", "timer", "schedule", "setreminder", "setalert", "settimer", "setschedule"]
+        aliases=["remind", "alert", "timer", "schedule", "setreminder", "setalert", "settimer", "setschedule"],
+        usage="m!reminder <time> <message>",
+        example="m!reminder 10m do the dishes"
     )
     async def reminder(ctx, time, **message):
         if not message:
