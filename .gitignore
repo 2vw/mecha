@@ -162,3 +162,5 @@ cython_debug/
 /.prettierrc
 /.vscode
 /cogs/__pycache__
+/ping.py
+/.gitignore
