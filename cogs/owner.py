@@ -1,4 +1,4 @@
-import voltage, asyncio, random, time, psutil, pymongo, json
+import voltage, asyncio, random, time, psutil, pymongo, json, datetime
 from voltage.ext import commands
 
 def setup(client) -> commands.Cog:
@@ -10,17 +10,24 @@ def setup(client) -> commands.Cog:
   @owner.command()
   async def statz(ctx):
     """Different from normal stats, the normal one shows the stats of the bot, this one shows complex stats. Like CPU usage and whatnot."""
-    embed = voltage.SendableEmbed(
-      title="Computer Stats",
-      description=f"CPU Usage: `{psutil.cpu_percent()}%`\nRAM Usage: `{psutil.virtual_memory().percent}%`\nDisk Usage: `{psutil.disk_usage('/').percent}%`",
-    )
     with open("json/data.json", "r") as f:
       uptime = json.load(f)['uptime']
-    embed1 = voltage.SendableEmbed(
-      title="Bot Stats",
-      description=f"Servers: `{client.servers}`\nUsers: `{client.users}`\nUptime: `{time.strftime('%H:%M:%S', time.gmtime(time.time() - uptime))}`",
-    )
-    await ctx.reply(embed=embed, embeds=embed1)
+    embed = voltage.SendableEmbed(
+      title=f"{client.user.name}'s Stats",
+      description=f"""
+## Computer Based Stats
+> CPU Usage: `{psutil.cpu_percent()}%`
+> RAM Usage: `{psutil.virtual_memory().percent}%`
+> Disk Usage: `{psutil.disk_usage('/').percent}%`
+      
+## Bot Stats
+> Servers: `{len(client.servers)}`
+> Users: `{len(client.users)}`
+> Uptime: `{str(datetime.timedelta(seconds=int(round(time.time() - uptime))))}s`
+      """,
+      colour="#44ff44"
+    ) # fix the uptime formatting at some point i swear to god
+    await ctx.send(embed=embed)
   
   @owner.command()
   async def ping(ctx):

@@ -12,7 +12,7 @@
 # tis a mess lol
 # """
 
-import random, pymongo, json, time, asyncio
+import random, pymongo, json, time, asyncio, datetime
 import voltage, os
 from voltage.ext import commands
 from host import alive
@@ -127,7 +127,7 @@ client = commands.CommandsClient(prefix=prefixes)
 async def ready():
   with open("json/data.json", "r") as f:
     data = json.load(f)
-    data['uptime'] = time.time()
+    data['uptime'] =  int(time.time())
   with open("json/data.json", "w") as r:
     json.dump(data, r, indent=2)
   print("Up and running (finally)") # Prints when the client is ready. You should know this
@@ -186,6 +186,8 @@ async def xp(ctx):
 # Cog loading schenanigans
 client.add_extension("cogs.owner")
 client.add_extension("cogs.fun")
+client.add_extension("cogs.utility")
+client.add_extension("cogs.giveaway")
 
 alive() #yeah blah blah stolen from old Mecha but hey, it works so why not copy and paste it, we're developers.
 client.run(config['TOKEN']) # Replace with your token in config, config.json to be exact, for everyone else, you know what this does stop fucking stalling pls :).
