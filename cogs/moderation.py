@@ -12,7 +12,7 @@ def setup(client) -> commands.Cog:
         "Some commands for moderation, in, out, and all around."
     )
 
-    @mod.command(description="Sets the nickname of a user!", name="nickname", aliases=['setnick', 'setusername', 'snick', 'suser', 'snick'])
+    @mod.command(description="Sets the nickname of a user!", name="nickname", aliases=['setnick', 'setusername', 'snick', 'suser'])
     async def nickname(ctx, member: voltage.User, *, nick):
         if commands.has_perms(manage_nicknames=True) and commands.bot_has_perms(manage_nicknames=True):
             try:
@@ -35,7 +35,8 @@ def setup(client) -> commands.Cog:
 
     @mod.command(
         description="Set a custom prefix for this server!",
-        aliases=["setprefix", "prefix", "serverprefix", "p", "sp"],
+        aliases=["setprefix", "prefix", "serverprefix", "p"],
+        name="sp"
     )
     async def sp(ctx, prefix):
       if commands.has_perms(manage_messages=True) and commands.bot_has_perms(manage_messages=True):
