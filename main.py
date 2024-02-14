@@ -171,7 +171,6 @@ async def ready():
     json.dump(data, r, indent=2)
   print("Up and running (finally)") # Prints when the client is ready. You should know this
 
-  await status() # Sets the status loop
 
 async def levelstuff(message): # running this in the on_message event drops the speed down to your grandmothers crawl. keep this in a function pls
   if update_level(message.author):
