@@ -514,7 +514,7 @@ def setup(client) -> commands.Cog:
     @eco.command(
         aliases=["apply", "getjob", "gj", "workas", "howjob"]
     )
-    @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
+    @limiter(30, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def job(ctx, job=None):
         if job is None:
             embed = voltage.SendableEmbed(
