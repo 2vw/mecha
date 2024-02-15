@@ -1,7 +1,25 @@
-import voltage, json, random, pymongo
+import voltage, json, random, pymongo, time, datetime
+from functools import wraps
 from voltage.ext import commands
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+
+def limiter(cooldown: int, *, on_ratelimited = None, key = None):
+  cooldowns = {}
+  getter = key or (lambda ctx, *_1, **_2: ctx.author.id)
+  def wrapper(callback):
+    @wraps(callback)
+    async def wrapped(ctx, *args, **kwargs):
+      k = getter(ctx, *args, **kwargs)
+      v = (time.time() - cooldowns.get(k, 0))
+      if v < cooldown and 0 > v:
+        if on_ratelimited:
+          return await on_ratelimited(ctx, -v, *args, **kwargs)
+        return
+      cooldowns[k] = time.time() + cooldown
+      return await callback(ctx, *args, **kwargs)
+    return wrapped
+  return wrapper 
 
 with open("json/config.json", "r") as f:
     config = json.load(f)
@@ -141,6 +159,7 @@ def setup(client) -> commands.Cog:
             return await ctx.send("Oh... Nevermind then!")
 
     @eco.command(description="View your balance.", aliases=["bal", 'b', 'money', 'mybal'], name="balance")
+    @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def bal(ctx, user:voltage.User=None):
         if not user:
             user = ctx.author
@@ -177,6 +196,7 @@ def setup(client) -> commands.Cog:
     @eco.command(
         description="25% chance to get **nothing** and 75% to get up to 250 coins!"
     )
+    @limiter(15, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def beg(ctx):
         amount = random.randint(1, 250)
         people = [
@@ -335,6 +355,7 @@ def setup(client) -> commands.Cog:
             return await ctx.send(embed=embed)
 
     @eco.command(description="Go to work u bum **requires Resume**")
+    @limiter(60, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def work(ctx):
         amount = random.randint(500, 1000)
         if not userdb.find_one({"userid": ctx.author.id}):
@@ -360,6 +381,7 @@ def setup(client) -> commands.Cog:
             )
 
     @eco.command(name="richest",aliases=["richlist", "richrank"], description="Check out the richest users in all of Mecha!")
+    @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def richest(ctx):
         lb = []
         count = 0
@@ -383,6 +405,7 @@ def setup(client) -> commands.Cog:
         )
 
     @eco.command(description="Move money into your bank account!", name="deposit", aliases=['dep', 'tobank', 'dp', 'd'])
+    @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def deposit(ctx, amount):
         if userdb.find_one({"userid": ctx.author.id}):
             userdata = userdb.find_one({"userid": ctx.author.id})["economy"]["wallet"]
@@ -430,6 +453,7 @@ def setup(client) -> commands.Cog:
             await create_account(ctx)
     
     @eco.command(description="Move money back into your wallet!", name="withdraw", aliases=['with', 'towallet', 'wd', 'w'])
+    @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def withdraw(ctx, amount):
         if userdb.find_one({"userid": ctx.author.id}):
             userdata = userdb.find_one({"userid": ctx.author.id})["economy"]["bank"]
@@ -476,9 +500,15 @@ def setup(client) -> commands.Cog:
         else:
             await create_account(ctx)
 
+    @eco.command()
+    @limiter(86400, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(datetime.timedelta(seconds=delay).hours)} hours`!"))
+    async def daily(ctx):
+        return await ctx.send("hi this is coming REAL soon i swear")
+
     @eco.command(
         aliases=["apply", "getjob", "gj", "workas", "howjob"]
     )
+    @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def job(ctx, job=None):
         if job is None:
             embed = voltage.SendableEmbed(
