@@ -1,4 +1,4 @@
-import flask
+import flask, json
 from flask import (
     Flask,
     render_template,
@@ -11,42 +11,58 @@ from flask import (
 from threading import Thread
 import logging
 
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 
+with open("json/config.json", "r") as f:
+  config = json.load(f)
+
+DBclient = MongoClient(config['MONGOURI'], server_api=ServerApi('1'))
+
+db = DBclient['beta']
+userdb = db['users']
+serverdb = db['servers']
+settingsdb = db['settings']
 
 app = Flask(__name__, '/static')
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
-
-servers=78
-users=9074
+    
 
 @app.route('/')
 def home():
-    return render_template("index.html", servers=servers, users=users) # fill ths out eventually, just update it whenever you're bored enough for not hard work to do :)
+    data = settingsdb.find_one({'_id': 1, "setting": "stats"})
+    return render_template("index.html", servers=data["servers"], users=data["users"]) 
 
 @app.route('/login')
 def login():
-    return render_template("index.html", servers=servers, users=users)
+    data = settingsdb.find_one({'_id': 1, "setting": "stats"})
+    return render_template("index.html", servers=data["servers"], users=data["users"])
 
 @app.route('/register')
 def register():
-    return render_template("index.html", servers=servers, users=users)
+    data = settingsdb.find_one({'_id': 1, "setting": "stats"})
+    return render_template("index.html", servers=data["servers"], users=data["users"])
 
 @app.route('/dashboard')
 def dashboard():
-    return render_template("index.html", servers=servers, users=users)
+    data = settingsdb.find_one({'_id': 1, "setting": "stats"})
+    return render_template("index.html", servers=data["servers"], users=data["users"])
 
 @app.route('/terms')
 def terms():
-    return render_template("index.html", servers=servers, users=users)
+    data = settingsdb.find_one({'_id': 1, "setting": "stats"})
+    return render_template("index.html", servers=data["servers"], users=data["users"])
 
 @app.route('/privacy')
 def privacy():
-    return render_template("index.html", servers=servers, users=users)
+    data = settingsdb.find_one({'_id': 1, "setting": "stats"})
+    return render_template("index.html", servers=data["servers"], users=data["users"])
 
 @app.route('/support')
 def support():
-    return render_template("index.html", servers=servers, users=users)
+    data = settingsdb.find_one({'_id': 1, "setting": "stats"})
+    return render_template("index.html", servers=data["servers"], users=data["users"])
 
 # creating the routes for sitemaps to be made so thats why they're useless right now :)
 

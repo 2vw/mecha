@@ -52,6 +52,7 @@ DBclient = MongoClient(config['MONGOURI'], server_api=ServerApi('1'))
 db = DBclient['beta']
 userdb = db['users']
 serverdb = db['servers']
+settingsdb = db['settings']
 
 def update_level(user:voltage.User):
   if userdb.find_one({'userid':user.id}):
@@ -118,6 +119,35 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
     return "Added"
   except Exception as e:
     return f"Sorry, An Error Occured!\n\n```\n{e}\n```"
+
+async def update_stats(users, servers):
+  if settingsdb.find_one(
+    {
+      "_id": 1
+    }
+  ):
+    settingsdb.update_one(
+      {
+        "_id": 1,
+        "setting": "stats"
+      },
+      {
+        "$set": {
+          "users": users,
+          "servers": servers
+        }
+      }
+    )
+  else:
+    settingsdb.insert_one(
+      {
+        "_id": 1,
+        "setting": "stats",
+        "users": users,
+        "servers": servers
+      }
+    )
+  print("Updated stats! Users: " + str(users) + " Servers: " + str(servers))
 
 def pingDB(): # ping the database; never gonna use this, might need it, add it.
   try:
@@ -191,7 +221,7 @@ async def ready():
   with open("json/data.json", "w") as r:
     json.dump(data, r, indent=2)
   print("Up and running (finally)") # Prints when the client is ready. You should know this
-  await asyncio.gather(update(), status())
+  await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status())
 
 
 async def levelstuff(message): # running this in the on_message event drops the speed down to your grandmothers crawl. keep this in a function pls

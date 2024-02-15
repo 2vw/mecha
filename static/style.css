@@ -1,11 +1,82 @@
+@font-face {
+    font-family: 'Whitney';
+    src: url('./fonts/Whitney-Black.otf');
+    font-weight: 900;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Whitney';
+    src: url('./fonts/Whitney-BlackItalic.otf');
+    font-weight: 900;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Whitney';
+    src: url('./fonts/Whitney-Bold.otf');
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Whitney';
+    src: url('./fonts/Whitney-BoldItalic.otf');
+    font-weight: 700;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Whitney';
+    src: url('./fonts/Whitney-Book.otf');
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Whitney';
+    src: url('./fonts/Whitney-BookItalic.otf');
+    font-weight: 400;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Whitney';
+    src: url('./fonts/Whitney-Light.otf');
+    font-weight: 300;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Whitney';
+    src: url('./fonts/Whitney-LightItalic.otf');
+    font-weight: 300;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'Whitney';
+    src: url('./fonts/Whitney-Medium.otf');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Whitney';
+    src: url('./fonts/Whitney-MediumItalic.otf');
+    font-weight: 500;
+    font-style: italic;
+}
+
 html, body {
     margin: 0;
 }
 
 body {
-    background: #413e3e;
+    background-image: linear-gradient(90deg, #363636, #444444);
+    background-color: #363636;
     color: #fff;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Whitney';
 }
 
 .gradient {
@@ -17,13 +88,52 @@ body {
 
 span {
     font-weight: bold;
-    font-size: 50px;
+    font-size: 80px;
 }
 
 .hero {
-    display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
     text-align: center;
+}
+
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: #363636;
+    color: white;
+    text-align: center;
+ }
+
+.nav {
+    background-color: transparent;
+    overflow: hidden;
+    display: flex;
+    justify-content: space-around;
+}
+
+.nav a {
+    float: left;
+    display: block;
+    color: #f2f2f2;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.nav a:hover {
+    background-color: #ddd;
+    color: black;
+}
+
+.nav a.active {
+    background-color: #4c6faf;
+    color: white;
+}
+
+.nav-links {
+    list-style: none;
 }
