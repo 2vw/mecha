@@ -40,6 +40,8 @@ import voltage, os
 from voltage.ext import commands
 from voltage.errors import CommandNotFound, NotBotOwner, NotEnoughArgs, NotEnoughPerms, NotFoundException, BotNotEnoughPerms, RoleNotFound, UserNotFound, MemberNotFound, ChannelNotFound
 from host import alive
+from time import time
+from functools import wraps
 
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
@@ -53,6 +55,9 @@ db = DBclient['beta']
 userdb = db['users']
 serverdb = db['servers']
 settingsdb = db['settings']
+cooldowns = db['cooldowns']
+
+import time
 
 def update_level(user:voltage.User):
   if userdb.find_one({'userid':user.id}):
@@ -178,7 +183,6 @@ client = commands.CommandsClient(prefix=prefixes)
 async def update():
   print("Started Update Loop")
   while True:
-    start = time.time()
     for i in userdb.find():
       total = 0
       total += int(i["economy"]["wallet"]) 
@@ -193,8 +197,40 @@ async def update():
           }
         }
       )
-    print(f"Successfully updated {userdb.count_documents({})} users in {round(time.time() - start, 2)}s")
-    await asyncio.sleep(120)
+    await asyncio.sleep(120) # sleep for 2 minutes
+
+async def add_cooldown(ctx, command_name:str, seconds:int):
+  cooldowns[ctx.author.id][str(command_name)] = time() + seconds
+  return True
+
+async def check_cooldown(ctx, command_name:str, seconds:int):
+  try:
+    if (time() < cooldowns[ctx.author.id][command_name]):
+      return True
+    else:
+      del cooldowns[ctx.author.id][command_name]
+  except KeyError:
+    await add_cooldown(ctx, command_name=command_name, seconds=seconds)
+  return False
+
+#cooldowns = {}
+# THANK YOU VLF I LOVE YOU :kisses:
+def limiter(cooldown: int, *, on_ratelimited = None, key = None):
+  cooldowns = {}
+  getter = key or (lambda ctx, *_1, **_2: ctx.author.id)
+  def wrapper(callback):
+    @wraps(callback)
+    async def wrapped(ctx, *args, **kwargs):
+      k = getter(ctx, *args, **kwargs)
+      v = (time.time() - cooldowns.get(k, 0))
+      if v < cooldown and 0 > v:
+        if on_ratelimited:
+          return await on_ratelimited(ctx, -v, *args, **kwargs)
+        return
+      cooldowns[k] = time.time() + cooldown
+      return await callback(ctx, *args, **kwargs)
+    return wrapped
+  return wrapper 
 
 async def status():
   print("Started Status Loop")
@@ -220,9 +256,25 @@ async def ready():
     data['uptime'] =  int(time.time())
   with open("json/data.json", "w") as r:
     json.dump(data, r, indent=2)
-  print("Up and running (finally)") # Prints when the client is ready. You should know this
+  print("Up and running") # Prints when the client is ready. You should know this
   await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status())
 
+@client.command()
+@limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
+async def foo(ctx):
+  await ctx.send(f"Not on cooldown, but now you are!\nCooldown is `5` seconds!")
+
+@client.listen("member_join")
+async def member_join(member:voltage.Member, server):
+  if member.bot:
+    membertype = "Bot"
+  else:
+    membertype = "User"
+  if server.id == config['SERVER_ID']:
+    print(f"A {membertype} named {member.name} has joined the server!")
+    if membertype == "User":
+      await member.send(f"Hello {membertype} {member.mention}! Welcome to the server!\nIf you're here to report a bug, head over to <#01HPPPXPV451RWSPN7NRQRBDS5>\nIf you want to suggest a feature.. head over to <#01HPPPXW6T37Z0MHNNXRQ461TT>!")
+    await member.add_roles(config['MEMBER_ROLE'])
 
 async def levelstuff(message): # running this in the on_message event drops the speed down to your grandmothers crawl. keep this in a function pls
   if update_level(message.author):
@@ -287,7 +339,7 @@ errormsg = [
 ]
 
 # error handling shit
-@client.error("message")
+"""@client.error("message")
 async def on_message_error(error: Exception, message):
   if isinstance(error, CommandNotFound):
     embed = voltage.SendableEmbed(
@@ -324,10 +376,7 @@ async def on_message_error(error: Exception, message):
       colour="#516BF2"
     )
     return await message.reply(message.author.mention, embed=embed)
-  else:
-    print(message)
-    print(Exception)
-    print(error)
+"""
 
 # Cog loading schenanigans
 try:
