@@ -113,15 +113,16 @@ async def apply_job(ctx, job:str):
     if userdb.find_one({"userid": ctx.author.id}):
         userdata = userdb.find_one({"userid": ctx.author.id})
         if "resume" in userdata['economy']['data']['inventory']:
-            if random.randint(1, 100) < 25:
-                userdb.update_one({"userid": ctx.author.id}, {"$set": {"economy.data.job": job}})
-                return await ctx.reply(f"You applied for **{job.capitalize()}** and were accepted!")
+            if random.randint(1, 100) < 75:
+                jobname = match_job_to_short_form(job, short_forms, joblist)
+                userdb.update_one({"userid": ctx.author.id}, {"$set": {"economy.data.job": jobname}})
+                return await ctx.reply(f"You applied for **{jobname.capitalize()}** and were accepted!")
             else:
                 userdb.bulk_write([
                     pymongo.UpdateOne({"userid": ctx.author.id}, {"$set": {"economy.data.job": "unemployed"}}),
                     pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": 250}})
                 ])
-                return await ctx.reply(f"You applied for **{job.capitalize()}** and were rejected! You've been compensated with `250` coins!")
+                return await ctx.reply(f"You applied for **{job.capitalize()}** and were rejected! You've been compensated with `250` coins! (If you previously had a job you were fired!)")
         else:
             return await ctx.reply("You don't have a resume to apply for a job with! Purchase a resume for `250` coins by using `m!buy resume`")
     else:
