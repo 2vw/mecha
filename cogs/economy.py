@@ -507,7 +507,7 @@ def setup(client) -> commands.Cog:
             await create_account(ctx)
 
     @eco.command()
-    @limiter(86400, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), "{hours}h {minutes}m {seconds} seconds!")}`!"))
+    @limiter(86400, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), "{hours}h {minutes}m {seconds}s!")}`!"))
     async def daily(ctx):
         return await ctx.send("hi this is coming REAL soon i swear")
 
