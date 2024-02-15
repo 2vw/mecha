@@ -4,6 +4,12 @@ from voltage.ext import commands
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
+def strfdelta(tdelta, fmt):
+    d = {"days": tdelta.days}
+    d["hours"], rem = divmod(tdelta.seconds, 3600)
+    d["minutes"], d["seconds"] = divmod(rem, 60)
+    return fmt.format(**d)
+
 def limiter(cooldown: int, *, on_ratelimited = None, key = None):
   cooldowns = {}
   getter = key or (lambda ctx, *_1, **_2: ctx.author.id)
@@ -501,7 +507,7 @@ def setup(client) -> commands.Cog:
             await create_account(ctx)
 
     @eco.command()
-    @limiter(86400, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{datetime.timedelta(seconds=delay)}`!"))
+    @limiter(86400, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), "{hours}h {minutes}m {seconds} seconds!")}`!"))
     async def daily(ctx):
         return await ctx.send("hi this is coming REAL soon i swear")
 
