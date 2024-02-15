@@ -22,8 +22,8 @@ def setup(client) -> commands.Cog:
                 await ctx.reply("Something went wrong! Sorry about that!")
         
     
-    @mod.command(description="BEGONE MESSAGES!")
-    async def purge(ctx, amount: int) -> None:
+    @mod.command(description="BEGONE MESSAGES!", name="purge", aliases=["clear", "c", "prune"])
+    async def purge(ctx, amount:int=10):
         if commands.has_perms(manage_messages=True) and commands.bot_has_perms(manage_messages=True):
             starttime = time.time()
             await ctx.channel.purge(amount)

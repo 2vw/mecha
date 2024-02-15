@@ -73,7 +73,6 @@ def check_xp(user: voltage.User):
   else:
     return 0
 
-
 def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function to add users to the database if they dont exist yet. but it works..
   if userdb.find_one({"userid": user.id}):
     return "User already exists."
@@ -146,6 +145,34 @@ def give_xp(user: voltage.User):
 prefixes = ["m!"]
 client = commands.CommandsClient(prefix=prefixes)
 
+async def server():
+  for server in client.servers:
+    serverdb.insert_one(
+      {
+        "_id": server.id,
+        "server_name": server.name,
+        "server_nsfw": server.nsfw,
+        "server_id": server.id,
+        "server_banner": server.banner.url,
+        "server_owner": server.owner.id,
+        "server_owner_name": server.owner.name,
+        "server_owner_id": server.owner.id,
+        "server_owner_discriminator": server.owner.discriminator,
+        "server_icon": server.icon,
+        "server_created_at": server.created_at,
+        "server_joined_at": server.joined_at,
+        "server_region": server.region,
+        "server_channels": server.channels,
+        "server_members": server.members,
+        "server_voice_channels": server.voice_channels,
+        "server_roles": server.roles,
+        "server_emojis": server.emojis,
+        "server_invites": server.fetch_invites(),
+        "server_description": server.description
+      }
+    )
+    print(server.name)
+
 async def update():
   print("Started Update Loop")
   while True:
@@ -192,7 +219,7 @@ async def ready():
   with open("json/data.json", "w") as r:
     json.dump(data, r, indent=2)
   print("Up and running (finally)") # Prints when the client is ready. You should know this
-  await asyncio.gather(update(), status())
+  await asyncio.gather(update(), status(), server())
 
 
 async def levelstuff(message): # running this in the on_message event drops the speed down to your grandmothers crawl. keep this in a function pls
