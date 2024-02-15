@@ -373,7 +373,7 @@ def setup(client) -> commands.Cog:
             else:
                 lb.append(f"**#{count}** -> {doc['username']}: {total:,}")
         embed = voltage.SendableEmbed(
-            title = "View the Leaderboard",
+            title = "View the Leaderboard (UPDATES EVERY 2 MINUTES!)",
             description='\n'.join(lb),
             color="#516BF2"
         )

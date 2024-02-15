@@ -155,7 +155,9 @@ async def update():
       total += int(i["economy"]["wallet"]) 
       total += int(i["economy"]["bank"])
       userdb.update_many(
-        {},
+        {
+          "_id": i["_id"]
+        },
         {
           "$set": {
             "economy.total": total
@@ -163,7 +165,7 @@ async def update():
         }
       )
     print(f"Successfully updated {userdb.count_documents({})} users in {round(time.time() - start, 2)}s")
-    await asyncio.sleep(900)
+    await asyncio.sleep(120)
 
 async def status():
   print("Started Status Loop")
