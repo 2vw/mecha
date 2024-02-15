@@ -339,7 +339,7 @@ errormsg = [
 ]
 
 # error handling shit
-"""@client.error("message")
+@client.error("message")
 async def on_message_error(error: Exception, message):
   if isinstance(error, CommandNotFound):
     embed = voltage.SendableEmbed(
@@ -376,7 +376,7 @@ async def on_message_error(error: Exception, message):
       colour="#516BF2"
     )
     return await message.reply(message.author.mention, embed=embed)
-"""
+
 
 # Cog loading schenanigans
 try:
