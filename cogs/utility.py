@@ -171,6 +171,17 @@ See you in `{time}`!
         await ctx.send(
             embed=embed
         )
-        await ctx.send()
+    
+    @utility.command(name="xp", description="Gets your XP and level!")
+    async def xp(ctx, user:voltage.User=None):
+        if not user:
+            user = ctx.author
+        try:
+            data = userdb.find_one({'userid':user.id})
+        except:
+            return await ctx.send("User not found!")
+        level = data['levels']['level'] # this is so stupid
+        xp = data['levels']['xp'] # this is so stupid
+        await ctx.reply(f"**{ctx.author.name}** has **{xp}** XP and is currently level **{level}**!") # praise kink? its whatever
     
     return utility

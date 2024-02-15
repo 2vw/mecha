@@ -1,5 +1,17 @@
 import voltage, asyncio, random, time, psutil, pymongo, json, datetime, io, contextlib
+from bson.son import SON
 from voltage.ext import commands
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+
+with open("json/config.json", "r") as f:
+    config = json.load(f)
+
+DBclient = MongoClient(config["MONGOURI"])
+
+db = DBclient["beta"]
+userdb = db["users"]
+serverdb = db["servers"]
 
 def setup(client) -> commands.Cog:
   owner = commands.Cog(
@@ -90,4 +102,8 @@ def setup(client) -> commands.Cog:
     else:
       await ctx.reply("Not owner, cant use this.")
 
+  @owner.command()
+  async def aggregate(ctx):
+    await ctx.send("done")
+    
   return owner

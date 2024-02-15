@@ -146,7 +146,27 @@ def give_xp(user: voltage.User):
 prefixes = ["m!"]
 client = commands.CommandsClient(prefix=prefixes)
 
+async def update():
+  print("Started Update Loop")
+  while True:
+    start = time.time()
+    for i in userdb.find():
+      total = 0
+      total += int(i["economy"]["wallet"]) 
+      total += int(i["economy"]["bank"])
+      userdb.update_many(
+        {},
+        {
+          "$set": {
+            "economy.total": total
+          }
+        }
+      )
+    print(f"Successfully updated {userdb.count_documents({})} users in {round(time.time() - start, 2)}s")
+    await asyncio.sleep(900)
+
 async def status():
+  print("Started Status Loop")
   while True:
     statuses = [
       f"Playing with {len(client.cache.servers)} servers and {len(client.members)} users!",
@@ -170,7 +190,7 @@ async def ready():
   with open("json/data.json", "w") as r:
     json.dump(data, r, indent=2)
   print("Up and running (finally)") # Prints when the client is ready. You should know this
-  await status()
+  await asyncio.gather(update(), status())
 
 
 async def levelstuff(message): # running this in the on_message event drops the speed down to your grandmothers crawl. keep this in a function pls
@@ -190,9 +210,9 @@ async def levelstuff(message): # running this in the on_message event drops the 
     {"userid":message.author.id}
   ): #super fucking stupid but it makes pylance happy
     update_level(message.author)
-    if random.randint(25, 100) <= 50: # 50% chance to get xp off a message, im too lazy to input my own rate limit fuck that
+    if random.randint(25, 100) <= 75: # 75% chance to get xp off a message, im too lazy to input my own rate limit fuck that
       give_xp(message.author)
-    if message.content.startswith("m!"): # good boy points if you use commands (will have to replace this later when custom prefixing is implemented)
+    elif message.content.startswith("m!") and random.randint(1,10) == 1: # good boy points if you use commands and a 10% chance to receive xp (will have to replace this later when custom prefixing is implemented)
       give_xp(message.author)
   else: 
     print(add_user(message))
@@ -221,14 +241,6 @@ async def add(ctx):
   result = add_user(ctx.author)
   await ctx.reply(f"Results are in! {result}")
 
-
-@client.command(name="xp", description="Gets your XP and level!")
-async def xp(ctx):
-  user = get_user(ctx.author)
-  level = user['levels']['level'] # this is so stupid
-  xp = user['levels']['xp'] # this is so stupid
-  await ctx.reply(f"**{ctx.author.name}** has **{xp}** XP and is currently level **{level}**!") # praise kink? its whatever
-
 errormsg = [
   "Error! Error!",
   "LOOK OUT!!! ERROR!!",
@@ -240,7 +252,7 @@ errormsg = [
   "404!",
   "ERROR.. ERROR..",
   "Error Occured!",
-  "An Error Occured!",
+  "An Error Occured!"
 ]
 
 # error handling shit
@@ -281,6 +293,10 @@ async def on_message_error(error: Exception, message):
       colour="#516BF2"
     )
     return await message.reply(message.author.mention, embed=embed)
+  else:
+    print(message)
+    print(Exception)
+    print(error)
 
 # Cog loading schenanigans
 try:
