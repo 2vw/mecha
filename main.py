@@ -265,7 +265,7 @@ async def foo(ctx):
   await ctx.send(f"Not on cooldown, but now you are!\nCooldown is `5` seconds!")
 
 @client.listen("member_join")
-async def member_join(member:voltage.Member, server):
+async def member_join(member:voltage.Member, server:voltage.Server):
   if member.bot:
     membertype = "Bot"
   else:
