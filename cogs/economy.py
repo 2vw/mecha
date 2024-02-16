@@ -427,7 +427,7 @@ def setup(client) -> commands.Cog:
                         embed = voltage.SendableEmbed(
                             title=ctx.author.display_name,
                             icon_url=ctx.author.display_avatar.url,
-                            description=f"You deposited **all** your money into your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']}` in your bank account!",
+                            description=f"You deposited **all** your money into your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
                             color="#00FF00",
                         )
                         await ctx.reply(embed=embed)
@@ -441,7 +441,7 @@ def setup(client) -> commands.Cog:
                     embed = voltage.SendableEmbed(
                         title=ctx.author.display_name,
                         icon_url=ctx.author.display_avatar.url,
-                        description=f"You deposited `${amount:,}` into your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']}` in your bank account!",
+                        description=f"You deposited `${amount:,}` into your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
                         color="#00FF00",
                     )
                     await ctx.reply(embed=embed)
@@ -475,7 +475,7 @@ def setup(client) -> commands.Cog:
                         embed = voltage.SendableEmbed(
                             title=ctx.author.display_name,
                             icon_url=ctx.author.display_avatar.url,
-                            description=f"You withdrew **all** the money from your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']}` in your bank account!",
+                            description=f"You withdrew **all** the money from your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
                             color="#00FF00",
                         )
                         await ctx.reply(embed=embed)
@@ -489,7 +489,7 @@ def setup(client) -> commands.Cog:
                     embed = voltage.SendableEmbed(
                         title=ctx.author.display_name,
                         icon_url=ctx.author.display_avatar.url,
-                        description=f"You withdrew `${amount:,}` from your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']}` in your bank account!",
+                        description=f"You withdrew `${amount:,}` from your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
                         color="#00FF00",
                     )
                     await ctx.reply(embed=embed)
@@ -506,11 +506,27 @@ def setup(client) -> commands.Cog:
         else:
             await create_account(ctx)
 
-    @eco.command()
-    @limiter(86400, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), "{hours}h {minutes}m {seconds}s!")}`!"))
+    @eco.command(name="daily", aliases=["dailies"], description="Claim your daily reward! (5,000 - 15,000 coins!)")
+    @limiter(86400, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), "{hours}h {minutes}m {seconds}s")}`!"))
     async def daily(ctx):
-        return await ctx.send("hi this is coming REAL soon i swear")
-
+        if userdb.find_one({"userid": ctx.author.id}):
+            amount = random.randint(5000, 15000)
+            userdb.bulk_write(
+                [
+                    pymongo.UpdateOne(
+                        {"userid": ctx.author.id},
+                        {"$inc": {"economy.wallet": amount}}
+                    ),
+                    pymongo.UpdateOne(
+                        {"userid": ctx.author.id},
+                        {"$set": {"economy.daily": time.time() + 86400}}
+                    )
+                ]
+            )
+            return await ctx.reply(f"You claimed your daily reward of `${amount:,}`!\nSee you tomorrow!")
+        else:
+            await create_account(ctx)
+            
     @eco.command(
         aliases=["apply", "getjob", "gj", "workas", "howjob"]
     )

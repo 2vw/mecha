@@ -363,39 +363,17 @@ async def on_message_error(error: Exception, message):
       colour="#516BF2"
     )
     return await message.reply(message.author.mention, embed=embed)
+  else:
+    raise(error)
 
 
 # Cog loading schenanigans
-try:
-  client.add_extension("cogs.owner")
-  print("Loaded Owner Cog!")
-except Exception as e:
-  print(e)
-try:
-  client.add_extension("cogs.fun")
-  print("Loaded Fun Cog!")
-except Exception as e:
-  print(e)
-try:
-  client.add_extension("cogs.utility")
-  print("Loaded Utility Cog!")
-except Exception as e:
-  print(e)
-try:
-  client.add_extension("cogs.giveaway")
-  print("Loaded Giveaway Cog!")
-except Exception as e:
-  print(e)
-try:
-  client.add_extension("cogs.moderation")
-  print("Loaded Moderation Cog!")
-except Exception as e:
-  print(e)
-try:
-  client.add_extension("cogs.economy")
-  print("Loaded Economy Cog!")
-except Exception as e:
-  print(e)
+for filename in os.listdir("./cogs"):
+  try:
+    client.add_extension(f"cogs.{filename[:-3]}")
+    print(f"Loaded {filename[:-3]} Cog!")
+  except Exception as e:
+    print(e)
 
 alive() #yeah blah blah stolen from old Mecha but hey, it works so why not copy and paste it, we're developers.
 client.run(config['TOKEN']) # Replace with your token in config, config.json to be exact, for everyone else, you know what this does stop fucking stalling pls :).
