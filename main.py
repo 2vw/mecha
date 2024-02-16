@@ -70,7 +70,6 @@ def update_level(user:voltage.User):
   else:
     return add_user(user)
 
-
 def check_xp(user: voltage.User):
   user_id = str(user.id)
   user_data = userdb.find_one({'userid': user_id})
@@ -263,18 +262,6 @@ async def ready():
 @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
 async def foo(ctx):
   await ctx.send(f"Not on cooldown, but now you are!\nCooldown is `5` seconds!")
-
-@client.listen("member_join")
-async def member_join(member:voltage.Member, server:voltage.Server):
-  if member.bot:
-    membertype = "Bot"
-  else:
-    membertype = "User"
-  if server.id == config['SERVER_ID']:
-    print(f"A {membertype} named {member.name} has joined the server!")
-    if membertype == "User":
-      await member.send(f"Hello {membertype} {member.mention}! Welcome to the server!\nIf you're here to report a bug, head over to <#01HPPPXPV451RWSPN7NRQRBDS5>\nIf you want to suggest a feature.. head over to <#01HPPPXW6T37Z0MHNNXRQ461TT>!")
-    await member.add_roles(config['MEMBER_ROLE'])
 
 async def levelstuff(message): # running this in the on_message event drops the speed down to your grandmothers crawl. keep this in a function pls
   if update_level(message.author):
