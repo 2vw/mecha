@@ -369,11 +369,12 @@ async def on_message_error(error: Exception, message):
 
 # Cog loading schenanigans
 for filename in os.listdir("./cogs"):
-  try:
-    client.add_extension(f"cogs.{filename[:-3]}")
-    print(f"Loaded {filename[:-3]} Cog!")
-  except Exception as e:
-    print(e)
+  if filename.endswith(".py"):
+    try:
+      client.add_extension(f"cogs.{filename[:-3]}")
+      print(f"Loaded {filename[:-3]} Cog!")
+    except Exception as e:
+      print(e)
 
 alive() #yeah blah blah stolen from old Mecha but hey, it works so why not copy and paste it, we're developers.
 client.run(config['TOKEN']) # Replace with your token in config, config.json to be exact, for everyone else, you know what this does stop fucking stalling pls :).
