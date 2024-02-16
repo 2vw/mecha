@@ -182,6 +182,15 @@ See you in `{time}`!
             return await ctx.send("User not found!")
         level = data['levels']['level'] # this is so stupid
         xp = data['levels']['xp'] # this is so stupid
-        await ctx.reply(f"**{ctx.author.name}** has **{xp}** XP and is currently level **{level}**!\nYou're only {5 * (level ^ 2) + (50 * level) + 100 - xp} XP away until level **{level + 1}**!") # praise kink? its whatever
+        txp = data['levels']['totalxp'] # this is so stupid
+        embed = voltage.SendableEmbed(
+            title = f"{user.display_name}'s XP",
+            description = f"""
+**{user.name}** has **{txp}** XP and is currently level **{level}**!
+**{user.name}** is **{5 * (level ^ 2) + (50 * level) + 100 - xp}** XP away from level **{level + 1}**!
+        """,
+        colour="#516BF2"
+        )
+        await ctx.reply(embed=embed)
     
     return utility

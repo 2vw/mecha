@@ -61,16 +61,25 @@ import time
 
 # USE THIS IF YOU NEED TO ADD NEW KEYS TO THE DATABASE
 """for user in userdb.find():
-  userdb.update_one(
-    {'userid':user['userid']}, 
-    {
-      '$set':{
-        'notifications':{
-          'inbox':[]
+  userdb.bulk_write(
+    [
+      pymongo.UpdateOne(
+        {'userid':user['userid']}, 
+        {
+          '$set':{
+            'levels.totalxp':user['levels']['xp']
+          }
         }
-      }
-    }
-  )
+      ),
+      pymongo.UpdateOne(
+        {'userid':user['userid']},
+        {
+          '$set':{
+            'levels.xp':0
+          }
+        }
+      )
+  ])
   print(user['username'])"""
 
 def update_level(user:voltage.User):
@@ -332,14 +341,14 @@ async def levelstuff(message):
         {"userid":message.author.id},
         {
           "$set":{
-            "levels.lastmessage": int(time.time()) + 30
+            "levels.lastmessage": int(time.time()) + 10
           }
         }
       )
     else:
-      return print(f"{message.author.name} is on cooldown for {userdb.find_one({"userid":message.author.id})['levels']['lastmessage'] - int(time.time()):.0f} seconds")
+      return f"{message.author.name} is on cooldown for {userdb.find_one({"userid":message.author.id})['levels']['lastmessage'] - int(time.time()):.0f} seconds"
   else:
-    print(add_user(message))
+    return add_user(message)
 
 # this shit is so fucking weird but hey, it works
 # Thank TheBobBobs, bro is a fucking goat for this.
