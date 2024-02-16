@@ -182,6 +182,6 @@ See you in `{time}`!
             return await ctx.send("User not found!")
         level = data['levels']['level'] # this is so stupid
         xp = data['levels']['xp'] # this is so stupid
-        await ctx.reply(f"**{ctx.author.name}** has **{xp}** XP and is currently level **{level}**!") # praise kink? its whatever
+        await ctx.reply(f"**{ctx.author.name}** has **{xp}** XP and is currently level **{level}**!\nYou're only {5 * (level ^ 2) + (50 * level) + 100 - xp} XP away until level **{level + 1}**!") # praise kink? its whatever
     
     return utility

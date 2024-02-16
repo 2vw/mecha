@@ -59,16 +59,39 @@ cooldowns = db['cooldowns']
 
 import time
 
+# USE THIS IF YOU NEED TO ADD NEW KEYS TO THE DATABASE
+"""for user in userdb.find():
+  userdb.update_one(
+    {'userid':user['userid']}, 
+    {
+      '$set':{
+        'notifications':{
+          'inbox':[]
+        }
+      }
+    }
+  )
+  print(user['username'])"""
+
 def update_level(user:voltage.User):
   if userdb.find_one({'userid':user.id}):
     user_data = userdb.find_one({'userid':user.id})
-    if 0 >= (5 * (user_data['levels']['level'] ^ 2) + (50 * user_data['levels']['level']) + 100 - user_data['levels']['xp']):
-      userdb.update_one({'userid':user.id}, {'$inc':{'levels.level':1}})
+    lvl = user_data['levels']['level']
+    xp = user_data['levels']['xp']
+    if 0 >= (5 * (lvl ^ 2) + (50 * lvl) + 100 - xp):
+      amt = random.randint(0, 100)
+      userdb.bulk_write([
+        pymongo.UpdateOne({'userid':user.id}, {'$inc':{'levels.level':1}}),
+        pymongo.UpdateOne({'userid':user.id}, {'$set':{'levels.xp':0}}),
+        pymongo.UpdateOne({'userid':user.id}, {'$inc':{'levels.totalxp':xp}}),
+        pymongo.UpdateOne({'userid':user.id}, {'$inc':{'economy.bank':100 * lvl + amt}}),
+        pymongo.UpdateOne({'userid':user.id}, {'$push':{'notifications.inbox':f"Congratulations on leveling up to level {lvl+1}!\nYou've recieved {100 * lvl + amt} coins as a reward!"}}),
+      ])
       return True
     else:
       return False
   else:
-    return add_user(user)
+    return False
 
 def check_xp(user: voltage.User):
   user_id = str(user.id)
@@ -166,12 +189,12 @@ def get_user(user: voltage.User):
   else:
     return "User not found."  
  
-def give_xp(user: voltage.User):   
+def give_xp(user: voltage.User, xp:int):   
   userdb.update_one(
       {"userid":user.id},
       {
           "$inc": {
-          "levels.xp": random.randint(1, 5)
+          "levels.xp": xp
           }
       }
   )
@@ -212,7 +235,6 @@ async def check_cooldown(ctx, command_name:str, seconds:int):
     await add_cooldown(ctx, command_name=command_name, seconds=seconds)
   return False
 
-#cooldowns = {}
 # THANK YOU VLF I LOVE YOU :kisses:
 def limiter(cooldown: int, *, on_ratelimited = None, key = None):
   cooldowns = {}
@@ -263,7 +285,7 @@ async def ready():
 async def foo(ctx):
   await ctx.send(f"Not on cooldown, but now you are!\nCooldown is `5` seconds!")
 
-async def levelstuff(message): # running this in the on_message event drops the speed down to your grandmothers crawl. keep this in a function pls
+async def oldlevelstuff(message): # running this in the on_message event drops the speed down to your grandmothers crawl. keep this in a function pls
   if update_level(message.author):
     try:
       channel = client.get_channel(config['LEVEL_CHANNEL'])
@@ -273,7 +295,7 @@ async def levelstuff(message): # running this in the on_message event drops the 
         color = "#44ff44",
         icon_url = message.author.avatar.url or "https://ibb.co/mcTxwnf"
       )
-      msg = await channel.send(embed=embed) # praise kink? its whatever
+      await channel.send(embed=embed) # praise kink? its whatever
     except KeyError:
       print("keyerror :(") # this should never happen, if it does, tell William, if it doesnt, tell William anyways.
   if userdb.find_one(
@@ -281,10 +303,42 @@ async def levelstuff(message): # running this in the on_message event drops the 
   ): #super fucking stupid but it makes pylance happy
     update_level(message.author)
     if random.randint(25, 100) <= 75: # 75% chance to get xp off a message, im too lazy to input my own rate limit fuck that
-      give_xp(message.author)
+      give_xp(message.author, random.randint(1, 5))
     elif message.content.startswith("m!") and random.randint(1,10) == 1: # good boy points if you use commands and a 10% chance to receive xp (will have to replace this later when custom prefixing is implemented)
       give_xp(message.author)
   else: 
+    print(add_user(message))
+
+async def levelstuff(message):
+  if update_level(message.author):
+    try:
+      channel = client.get_channel(config['LEVEL_CHANNEL'])
+      embed = voltage.SendableEmbed(
+        title = f"{message.author.name} has leveled up!",
+        description = f"{message.author.name} has leveled up to level **{get_user(message.author)['levels']['level']}**!",
+        color = "#44ff44",
+        icon_url = message.author.avatar.url or "https://ibb.co/mcTxwnf"
+      )
+      await channel.send(embed=embed) # praise kink? its whatever
+    except KeyError:
+      print("keyerror :(") # this should never happen, if it does, tell William, if it doesnt, tell William anyways.
+  elif userdb.find_one(
+    {"userid":message.author.id}
+  ):
+    if userdb.find_one({"userid":message.author.id})['levels']['lastmessage'] <= int(time.time()):
+      give_xp(message.author, 1)
+      update_level(message.author)
+      userdb.update_one(
+        {"userid":message.author.id},
+        {
+          "$set":{
+            "levels.lastmessage": int(time.time()) + 30
+          }
+        }
+      )
+    else:
+      return print(f"{message.author.name} is on cooldown for {userdb.find_one({"userid":message.author.id})['levels']['lastmessage'] - int(time.time()):.0f} seconds")
+  else:
     print(add_user(message))
 
 # this shit is so fucking weird but hey, it works
