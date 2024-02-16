@@ -67,7 +67,7 @@ import time
         {'userid':user['userid']}, 
         {
           '$set':{
-            'levels.totalxp':user['levels']['xp']
+            'levels.totalxp':0
           }
         }
       ),
@@ -76,6 +76,14 @@ import time
         {
           '$set':{
             'levels.xp':0
+          }
+        }
+      ),
+      pymongo.UpdateOne(
+        {'userid':user['userid']},
+        {
+          '$set':{
+            'levels.level':0
           }
         }
       )

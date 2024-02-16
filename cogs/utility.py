@@ -158,11 +158,11 @@ See you in `{time}`!
             count += 1
             if count <= 3:
                 emoji = ["0", "🥇", "🥈", "🥉"]
-                lb.append(f"{"#" * count} **{emoji[count]}** {doc['username']}\n**LVL{doc['levels']['level']}** | **{doc['levels']['xp']}XP**")
+                lb.append(f"{"#" * count} **{emoji[count]}** {doc['username']}\n**LVL{doc['levels']['level']}** | **{doc['levels']['totalxp'] + doc['levels']['xp']}XP**")
             elif count == 4:
-                lb.append(f"\n**#4** -> {doc['username']}: **LVL {doc['levels']['level']}** | **{doc['levels']['xp']} XP**")
+                lb.append(f"\n**#4** -> {doc['username']}: **LVL {doc['levels']['level']}** | **{doc['levels']['totalxp']} XP**")
             else:
-                lb.append(f"**#{count}** -> {doc['username']}: **LVL {doc['levels']['level']}** | **{doc['levels']['xp']} XP**")
+                lb.append(f"**#{count}** -> {doc['username']}: **LVL {doc['levels']['level']}** | **{doc['levels']['totalxp']} XP**")
         embed = voltage.SendableEmbed(
             title = "View the Leaderboard",
             description='\n'.join(lb),
