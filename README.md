@@ -119,4 +119,6 @@
 | 99 | 54,055 | 1,845,195 |
 | 100 | 55,100 | 1,899,250 |
 
+> The reason it only goes up to level 100, is you can gain 1xp every 10 seconds (by sending a message), so in theory it would take 7.222 months of straight talking every 10 seconds to reach level 100 (from level 0)
+
 #### *Created by William C. 2022 - 2024*
