@@ -2,12 +2,13 @@
 
 Mecha is an innovative bot powered by the [Voltage](https://github.com/EnokiUN/Voltage) framework, designed to enhance your server experience with a variety of interactive features.
 
-## Features
+## Key Features
 
-- **Leveling System**: Engage your community with a global leveling system. Users can gain experience and climb up the ranks by actively participating in the server.
-- **Data Storage**: Utilizes PyMongo for efficient and reliable information storage.
-- **Customizable**: Configuration is made simple with the commands within Mecha, which you can tailor to fit your server's needs.
-- **Powered by Voltage**: Mecha is built on top of *Voltage*, a robust python wrapper created by [EnokiUN](https://github.com/EnokiUN), ensuring smooth performance and ease of use.
+- **Advanced Leveling System**: Foster community engagement through a sophisticated global leveling system that rewards user participation and interaction within the server.
+- **Dynamic Economy**: Mecha stands out with an innovative economic framework, offering an enhanced user experience that sets it apart from competitors.
+- **Robust Data Management**: Implements PyMongo for high-performance, dependable data storage solutions.
+- **Highly Customizable**: Mecha provides straightforward command-based configuration, allowing for seamless customization to align with the specific requirements of your server.
+- **Voltage Framework**: Built upon the *Voltage* framework, a powerful Python wrapper authored by [EnokiUN](https://github.com/EnokiUN), Mecha ensures optimal functionality and user-friendly operation.
 
 ## Fun Facts
 
@@ -29,7 +30,7 @@ Mecha is currently at version 2.0.7a, with regular updates and new features bein
 
 ### Thank You
 
-We appreciate your interest in Mecha! If you have any questions or suggestions, feel free to reach out to the development team via our [support server](https://rvlt.gg/EnyEfnXf).
+We appreciate your interest in Mecha! If you have any questions and/or suggestions, feel free to reach out to the development team via our [support server](https://rvlt.gg/EnyEfnXf).
 
 Enjoy using Mecha in your server!
 | Level | XP needed to level up | Total XP required |
