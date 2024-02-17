@@ -160,9 +160,9 @@ See you in `{time}`!
                 emoji = ["0", "🥇", "🥈", "🥉"]
                 lb.append(f"{"#" * count} **{emoji[count]}** {doc['username']}\n**LVL{doc['levels']['level']}** | **{doc['levels']['totalxp'] + doc['levels']['xp']}XP**")
             elif count == 4:
-                lb.append(f"\n**#4** -> {doc['username']}: **LVL {doc['levels']['level']}** | **{doc['levels']['totalxp']} XP**")
+                lb.append(f"\n**#4** -> {doc['username']}: **LVL {doc['levels']['level']}** | **{doc['levels']['totalxp'] + doc['levels']['xp']} XP**")
             else:
-                lb.append(f"**#{count}** -> {doc['username']}: **LVL {doc['levels']['level']}** | **{doc['levels']['totalxp']} XP**")
+                lb.append(f"**#{count}** -> {doc['username']}: **LVL {doc['levels']['level']}** | **{doc['levels']['totalxp'] + doc['levels']['xp']} XP**")
         embed = voltage.SendableEmbed(
             title = "View the Leaderboard",
             description='\n'.join(lb),
@@ -186,7 +186,7 @@ See you in `{time}`!
         embed = voltage.SendableEmbed(
             title = f"{user.display_name}'s XP",
             description = f"""
-**{user.name}** has **{txp}** XP and is currently level **{level}**!
+**{user.name}** has **{txp + xp}** XP and is currently level **{level}**!
 **{user.name}** is **{5 * (level ^ 2) + (50 * level) + 100 - xp}** XP away from level **{level + 1}**!
         """,
         colour="#516BF2"
