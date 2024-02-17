@@ -1,9 +1,26 @@
 import voltage, asyncio
 import time, json
+from functools import wraps
 import datetime
 from datetime import timedelta
 from voltage.ext import commands
 
+def limiter(cooldown: int, *, on_ratelimited = None, key = None):
+  cooldowns = {}
+  getter = key or (lambda ctx, *_1, **_2: ctx.author.id)
+  def wrapper(callback):
+    @wraps(callback)
+    async def wrapped(ctx, *args, **kwargs):
+      k = getter(ctx, *args, **kwargs)
+      v = (time.time() - cooldowns.get(k, 0))
+      if v < cooldown and 0 > v:
+        if on_ratelimited:
+          return await on_ratelimited(ctx, -v, *args, **kwargs)
+        return
+      cooldowns[k] = time.time() + cooldown
+      return await callback(ctx, *args, **kwargs)
+    return wrapped
+  return wrapper 
 
 def setup(client) -> commands.Cog:
 
@@ -13,6 +30,7 @@ def setup(client) -> commands.Cog:
     )
 
     @mod.command(description="Sets the nickname of a user!", name="nickname", aliases=['setnick', 'setusername', 'snick', 'suser'])
+    @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def nickname(ctx, member: voltage.User, *, nick):
         if commands.has_perms(manage_nicknames=True) and commands.bot_has_perms(manage_nicknames=True):
             try:
@@ -23,23 +41,30 @@ def setup(client) -> commands.Cog:
         
     
     @mod.command(description="BEGONE MESSAGES!", name="purge", aliases=["clear", "c", "prune"])
+    @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def purge(ctx, amount:int=10):
         if commands.has_perms(manage_messages=True) and commands.bot_has_perms(manage_messages=True):
-            starttime = time.time()
-            await ctx.channel.purge(amount)
-            embed = voltage.SendableEmbed(
-                description=f"# Purged!\nPurged {amount} messages in {round(time.time() - starttime, 2)}s!",
-                color="#00FF00",
-            )
-            await ctx.send(content=ctx.author.mention, embed=embed)
-
+            if amount > 0:
+                starttime = time.time()
+                await ctx.channel.purge(amount)
+                embed = voltage.SendableEmbed(
+                    description=f"# Purged!\nPurged {amount} messages in {round(time.time() - starttime, 2)}s!",
+                    color="#00FF00",
+                )
+                await ctx.send(content=ctx.author.mention, embed=embed)
+            else:
+                embed = voltage.SendableEmbed(
+                    description="You can't purge 0 messages!",
+                )
+                await ctx.reply(embed=embed)
     @mod.command(
         description="Set a custom prefix for this server!",
         aliases=["setprefix", "prefix", "serverprefix", "p"],
         name="sp"
     )
+    @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def sp(ctx, prefix):
-      if commands.has_perms(manage_messages=True) and commands.bot_has_perms(manage_messages=True):
+      if commands.has_perms(manage_server=True) and commands.bot_has_perms(manager_server=True):
         embed = voltage.SendableEmbed(
             title="Added a new prefix to your list!",
             description=f"Added `{prefix}` to your list!",
@@ -48,6 +73,7 @@ def setup(client) -> commands.Cog:
         return await ctx.send(content=ctx.author.mention, embed=embed)
 
     @mod.command(description="Ban a user from your server!")
+    @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def ban(ctx, member: voltage.Member):
         if commands.has_perms(ban_members=True) and commands.bot_has_perms(ban_members=True):
             if ctx.author.roles[0] > len(member.roles):
@@ -74,6 +100,7 @@ def setup(client) -> commands.Cog:
                 await ctx.send(f"I was unable to ban {member.display_name}!\n```\n{e}\n```")
 
     @mod.command(description="Kick a user from your server!")
+    @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def kick(ctx, member: voltage.Member):
         if commands.has_perms(kick_members=True) and commands.bot_has_perms(kick_members=True):
             return await ctx.send(

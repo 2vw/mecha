@@ -38,7 +38,7 @@ onUserEdit : "user_update"
 import random, pymongo, json, time, asyncio, datetime
 import voltage, os
 from voltage.ext import commands
-from voltage.errors import CommandNotFound, NotBotOwner, NotEnoughArgs, NotEnoughPerms, NotFoundException, BotNotEnoughPerms, RoleNotFound, UserNotFound, MemberNotFound, ChannelNotFound
+from voltage.errors import CommandNotFound, NotBotOwner, NotEnoughArgs, NotEnoughPerms, NotFoundException, BotNotEnoughPerms, RoleNotFound, UserNotFound, MemberNotFound, ChannelNotFound, HTTPError 
 from host import alive
 from time import time
 from functools import wraps
@@ -287,6 +287,19 @@ async def status():
     await client.set_status(status, voltage.PresenceType.online)
     await asyncio.sleep(5)
 
+async def stayon():
+  i = 0
+  while True:
+    channel = client.get_channel(config['REMIND_CHANNEL'])
+    embed = voltage.SendableEmbed(
+      title="I'm online!",
+      description=f"I'm online!\nIts been {i} hour(s)!",
+    )
+    await channel.send(embed=embed)
+    await asyncio.sleep(60*60)
+    i += 1
+    
+
 @client.listen("ready")
 async def ready():
   with open("json/data.json", "r") as f:
@@ -295,7 +308,7 @@ async def ready():
   with open("json/data.json", "w") as r:
     json.dump(data, r, indent=2)
   print("Up and running") # Prints when the client is ready. You should know this
-  await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status())
+  await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status(), stayon())
 
 @client.command()
 @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
@@ -364,6 +377,8 @@ async def levelstuff(message):
 async def on_message(message):
   if message.author.bot:
     return
+  if message.channel.id == message.author.id:
+    return
   asyncio.create_task(levelstuff(message)) # pièce de résistance
   await client.handle_commands(message) # so everything else doesnt trip over its clumsy ass selves.
 
@@ -410,6 +425,20 @@ async def on_message_error(error: Exception, message):
     embed = voltage.SendableEmbed(
       title=random.choice(errormsg),
       description="YOU'RE MISSING ARGS!",
+      colour="#516BF2"
+    )
+    return await message.reply(message.author.mention, embed=embed)
+  elif isinstance(error, HTTPError):
+    embed = voltage.SendableEmbed(
+      title=random.choice(errormsg),
+      description="You.. You rate limited me! How dare you! `you've been banned for 1 hour.`",
+      color="#516BF2"
+    )
+    await message.reply(message.author.mention, embed=embed)
+  elif isinstance(error, UserNotFound):
+    embed = voltage.SendableEmbed(
+      title=random.choice(errormsg),
+      description="That user doesnt exist!",
       colour="#516BF2"
     )
     return await message.reply(message.author.mention, embed=embed)

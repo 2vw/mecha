@@ -1,4 +1,4 @@
-import voltage, asyncio, random, time, psutil, pymongo, json, datetime, io, contextlib, requests, string
+import voltage, asyncio, random, time, psutil, pymongo, json, datetime, io, contextlib, requests, string, os, sys
 from bson.son import SON
 from voltage.ext import commands
 from pymongo.mongo_client import MongoClient
@@ -22,7 +22,7 @@ def setup(client) -> commands.Cog:
   @owner.command()
   async def statz(ctx):
     """Different from normal stats, the normal one shows the stats of the bot, this one shows complex stats. Like CPU usage and whatnot."""
-    if commands.is_owner:
+    if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
       with open("json/data.json", "r") as f:
         uptime = json.load(f)['uptime']
       embed = voltage.SendableEmbed(
@@ -47,7 +47,7 @@ def setup(client) -> commands.Cog:
   @owner.command()
   async def oping(ctx):
     """Different from normal ping command, this one checks response time and rate limits."""
-    if commands.is_owner:
+    if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
       start = time.time()
       embed=voltage.SendableEmbed(
         title="Pinging..", 
@@ -80,7 +80,7 @@ def setup(client) -> commands.Cog:
     aliases=['ev', 'exec']
   )
   async def eval(ctx, *, code):
-    if commands.is_owner:
+    if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
       str_obj = io.StringIO() #Retrieves a stream of data
       try:
         with contextlib.redirect_stdout(str_obj):
@@ -97,7 +97,7 @@ def setup(client) -> commands.Cog:
     aliases=['kt', 'okt', 't']
   )
   async def kwargstest(ctx, *time, **message):
-    if commands.is_owner:
+    if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
       await ctx.send(f"{str(time)}\n{str(message)}")
     else:
       await ctx.reply("Not owner, cant use this.")
@@ -106,5 +106,16 @@ def setup(client) -> commands.Cog:
   async def aggregate(ctx):
     await ctx.send("done")
     
+  def restart_bot(): 
+    os.execv(sys.executable, ['python'] + sys.argv)
+
+  @owner.command(name= 'restart')
+  async def restart(ctx):
+    if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
+      await ctx.send("Restarting bot...")
+      restart_bot()
+    else:
+      await ctx.reply("Not owner, cant use this.")
+
     
   return owner

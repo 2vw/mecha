@@ -128,7 +128,7 @@ async def buy_item(ctx, item:str, price:int): # this sucks but it works
             ])
         else:
             userdb.bulk_write([
-                pymongo.UpdateOne({"userid": ctx.author.id}, {"$set": {f"economy.data.inventory.{item.lower()}": 1}}),
+                pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {f"economy.data.inventory.{item.lower()}": 1}}),
                 pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -price}})
             ])
         return await ctx.reply(f"You bought **{item.capitalize()}** for **{price}** coins!")
@@ -325,7 +325,7 @@ def setup(client) -> commands.Cog:
             "I don't share with the n-words",
             "pull urself up by your bootstraps scrub",
             "HeRe In AmErIcA wE dOnT dO cOmMuNiSm",
-            "Imagine begging in 2022, gofundme is where it is at",
+            "Imagine begging in 2024, gofundme is where it is at",
         ]
         percentage = random.randint(1, 100)
         if not userdb.find_one({"userid": ctx.author.id}):
@@ -438,10 +438,11 @@ def setup(client) -> commands.Cog:
                             {"$inc": {"economy.wallet": -int(amount), "economy.bank": int(amount)}}
                         )
                     ])
+                    amt = int(amount)
                     embed = voltage.SendableEmbed(
                         title=ctx.author.display_name,
                         icon_url=ctx.author.display_avatar.url,
-                        description=f"You deposited `${amount:,}` into your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
+                        description=f"You deposited `${amt:,}` into your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
                         color="#00FF00",
                     )
                     await ctx.reply(embed=embed)
@@ -457,6 +458,92 @@ def setup(client) -> commands.Cog:
                 await ctx.reply(embed=embed)
         else:
             await create_account(ctx)
+    
+    @eco.command(name="blackjack", aliases=["bj"], description="Play a game of blackjack!")
+    @limiter(7, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
+    async def blackjack(ctx, bet:int=None):
+        if not bet or not bet.is_integer() or bet < 0:
+            return await ctx.reply("Please enter a valid bet!")
+        elif bet > userdb.find_one({"userid": ctx.author.id})["economy"]["wallet"]:
+            embed = voltage.SendableEmbed(
+                title=ctx.author.display_name,
+                icon_url=ctx.author.display_avatar.url,
+                description=f"You don't have that much money in your wallet!\n*(lol poor fella)*",
+                colour="#FF0000"
+            )
+            return await ctx.reply(embed=embed)
+        elif userdb.find_one({"userid": ctx.author.id}):
+            userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -bet}})
+            deck = [
+                'SA', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'SJ', 'SQ', 'SK',
+                'HA', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7', 'H8', 'H9', 'H10', 'HJ', 'HQ', 'HK',
+                'CA', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'CJ', 'CQ', 'CK',
+                'DA', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10', 'DJ', 'DQ', 'DK'
+            ]
+            random.shuffle(deck)
+
+            def calculate_hand(hand):
+                value = 0
+                ace_count = 0
+                for card in hand:
+                    if card[1:] in ['J', 'Q', 'K']:
+                        value += 10
+                    elif card[1:] == 'A':
+                        ace_count += 1
+                        value += 11
+                    else:
+                        value += int(card[1:])
+                while value > 21 and ace_count:
+                    value -= 10
+                    ace_count -= 1
+                return value
+
+            player_hand = [deck.pop(), deck.pop()]
+            dealer_hand = [deck.pop(), deck.pop()]
+
+            player_value = calculate_hand(player_hand)
+            dealer_value = calculate_hand(dealer_hand)
+
+            # .replace('S', '♠').replace('H', '♥').replace('D', '♦').replace('C', '♣')
+
+            # Initial hand display
+            await ctx.send(f"Dealer's hand: {str(dealer_hand[0])} and ?\nYour hand: {' '.join(player_hand)} (Total: {player_value})\n`hit` or `stand`?")
+
+            # Player's turn
+            while True:
+                if player_value == 21:
+                    await ctx.send("Blackjack! You win!")
+                    return
+                elif player_value > 21:
+                    await ctx.send(f"You busted with a total of {player_value}. Dealer wins.")
+                    return
+                action = await client.wait_for('message', check=lambda m: m.author == ctx.author and m.content.lower() in ['hit', 'stand', 'h', 's'], timeout=30)
+                if any(x in action.content.lower() for x in ['hit', 'h', 'draw']):
+                    player_hand.append(deck.pop())
+                    player_value = calculate_hand(player_hand)
+                    await ctx.send(f"You drew a card: {str(player_hand[-1])}\nYour hand: {' '.join(player_hand)} (Total: {player_value})")
+                else:
+                    break
+
+            # Dealer's turn
+            await ctx.send(f"Dealer's hand: {' '.join(dealer_hand)} (Total: {dealer_value})")
+            while dealer_value < 17:
+                dealer_hand.append(deck.pop())
+                dealer_value = calculate_hand(dealer_hand)
+                await ctx.send(f"Dealer drew a card: {dealer_hand[-1]}\nDealer's hand: {' '.join(dealer_hand)} (Total: {dealer_value})")
+
+            # Determine winner
+            if dealer_value > 21 or player_value > dealer_value:
+                await ctx.send(f"Dealer busted with a total of {dealer_value}. You win!")
+                userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": bet*2}})
+            elif dealer_value == player_value:
+                await ctx.send("It's a tie!")
+                userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": bet}})
+            else:
+                await ctx.send(f"Dealer wins with a total of {dealer_value} against your {player_value}.")
+        else:
+            add_user(ctx.author)
+            await ctx.send("Please try again!")
     
     @eco.command(description="Move money back into your wallet!", name="withdraw", aliases=['with', 'towallet', 'wd', 'w'])
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
@@ -486,10 +573,11 @@ def setup(client) -> commands.Cog:
                             {"$inc": {"economy.wallet": int(amount), "economy.bank": -int(amount)}}
                         )
                     ])
+                    amt = int(amount)
                     embed = voltage.SendableEmbed(
                         title=ctx.author.display_name,
                         icon_url=ctx.author.display_avatar.url,
-                        description=f"You withdrew `${amount:,}` from your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
+                        description=f"You withdrew `${amt:,}` from your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
                         color="#00FF00",
                     )
                     await ctx.reply(embed=embed)
@@ -530,7 +618,7 @@ def setup(client) -> commands.Cog:
     @eco.command(
         aliases=["apply", "getjob", "gj", "workas", "howjob"]
     )
-    @limiter(30, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
+    @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def job(ctx, job=None):
         if job is None:
             embed = voltage.SendableEmbed(

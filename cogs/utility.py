@@ -1,7 +1,26 @@
 import voltage, pymongo, os, asyncio, json, datetime, time, pendulum, re
+from mcstatus import JavaServer
+from functools import wraps
 from voltage.ext import commands
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+
+def limiter(cooldown: int, *, on_ratelimited = None, key = None):
+  cooldowns = {}
+  getter = key or (lambda ctx, *_1, **_2: ctx.author.id)
+  def wrapper(callback):
+    @wraps(callback)
+    async def wrapped(ctx, *args, **kwargs):
+      k = getter(ctx, *args, **kwargs)
+      v = (time.time() - cooldowns.get(k, 0))
+      if v < cooldown and 0 > v:
+        if on_ratelimited:
+          return await on_ratelimited(ctx, -v, *args, **kwargs)
+        return
+      cooldowns[k] = time.time() + cooldown
+      return await callback(ctx, *args, **kwargs)
+    return wrapped
+  return wrapper 
 
 with open("json/config.json", "r") as f:
     config = json.load(f)
@@ -19,6 +38,7 @@ def setup(client) -> commands.Cog:
     )
 
     @utility.command()
+    @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def stats(ctx):
         """Different from normal stats, the normal one shows the stats of the bot, this one shows complex stats. Like CPU usage and whatnot."""
         with open("json/data.json", "r") as f:
@@ -77,6 +97,8 @@ def setup(client) -> commands.Cog:
                     if int(gtime) > 7776000:
                         return 0
                     return gtime
+                else:
+                    return None
             except Exception as e:
                 print(e)
 
@@ -87,6 +109,7 @@ def setup(client) -> commands.Cog:
         #usage="m!avatar <user>",
         #example="m!avatar @css"
     )
+    @limiter(3, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def avatar(ctx, member: voltage.Member):
         embed = voltage.SendableEmbed(
             title=f"{member.display_name}'s avatar!",
@@ -102,11 +125,14 @@ def setup(client) -> commands.Cog:
         #usage="m!reminder <time> <message>",
         #example="m!reminder 10m do the dishes"
     )
+    @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def reminder(ctx, time, **message):
         if not message:
             message = "No message provided."
         if time:
             rtime = parse_time(str(time))
+            if not rtime:
+                return await ctx.send("Please specify a proper duration. (i.e 10s, 5m, 1h, 1d)")
         mainembed = voltage.SendableEmbed(
             description=f"""
 Set a reminder: `{message}`
@@ -151,6 +177,7 @@ See you in `{time}`!
                 pass
     
     @utility.command()
+    @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def leaderboard(ctx):
         lb = []
         count = 0
@@ -173,6 +200,7 @@ See you in `{time}`!
         )
     
     @utility.command(name="xp", description="Gets your XP and level!")
+    @limiter(3, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def xp(ctx, user:voltage.User=None):
         if not user:
             user = ctx.author
@@ -192,5 +220,20 @@ See you in `{time}`!
         colour="#516BF2"
         )
         await ctx.reply(embed=embed)
+    
+    @utility.command(description="Get information on a minecraft server!")
+    @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
+    async def mcserver(ctx, servername):
+        try:
+            server = JavaServer.lookup(str(servername), timeout=5)
+            status = server.status()
+            embed = voltage.SendableEmbed(
+                title=f"{servername}'s Information",
+                description=f"**Players online:**\n`{status.players.online}` Currently Online\n**Server Latency:**\n`{round(status.latency, 2)}ms`",
+                colour="#516BF2",
+            )
+            await ctx.reply(embed=embed)
+        except:
+            await ctx.reply("Server not found! Or the server is offline!\n`TIP: the server name might end in .net or .com! Try both!`")
     
     return utility
