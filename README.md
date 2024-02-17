@@ -18,7 +18,7 @@ Mecha is an innovative bot powered by the [Voltage](https://github.com/EnokiUN/V
 
 To get started with Mecha, follow these simple steps:
 
-1. Clone the repository from [GitHub](https://github.com/YourRepo/Mecha).
+1. Clone the repository from [GitHub](https://github.com/2vw/Mecha).
 2. Install the required dependencies by running `pip install -r requirements.txt`.
 3. Configure the `config.json` file with your bot token and desired settings.
 4. Run the bot using `python main.py` and watch it come to life in your server!
@@ -138,4 +138,4 @@ Enjoy using Mecha in your server!
 
 > The reason it only goes up to level 100, is you can gain 1xp every 10 seconds (by sending a message), so in theory it would take 7.222 months of straight talking every 10 seconds to reach level 100 (from level 0)
 
-### *Created by William C. 2022 - 2024*
+#### *Created by William C. 2022 - 2024*
