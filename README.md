@@ -29,7 +29,7 @@ Mecha is currently at version 2.0.7a, with regular updates and new features bein
 
 ### Thank You
 
-We appreciate your interest in Mecha! If you have any questions or suggestions, feel free to reach out to the development team.
+We appreciate your interest in Mecha! If you have any questions or suggestions, feel free to reach out to the development team via our [support server](https://rvlt.gg/EnyEfnXf).
 
 Enjoy using Mecha in your server!
 | Level | XP needed to level up | Total XP required |
