@@ -1,4 +1,4 @@
-﻿# Welcome to Mecha!
+﻿# Welcome to Mecha
 
 Mecha is an innovative bot powered by the [Voltage](https://github.com/EnokiUN/Voltage) framework, designed to enhance your server experience with a variety of interactive features.
 
@@ -9,11 +9,15 @@ Mecha is an innovative bot powered by the [Voltage](https://github.com/EnokiUN/V
 - **Robust Data Management**: Implements PyMongo for high-performance, dependable data storage solutions.
 - **Highly Customizable**: Mecha provides straightforward command-based configuration, allowing for seamless customization to align with the specific requirements of your server.
 - **Voltage Framework**: Built upon the *Voltage* framework, a powerful Python wrapper authored by [EnokiUN](https://github.com/EnokiUN), Mecha ensures optimal functionality and user-friendly operation.
+- **User-Friendly**: Mecha is designed to be user-friendly, with intuitive features and intuitive command syntax.
+- **Open Source**: Mecha is open source and available on GitHub, with regular updates and bug fixes being made.
+- **100% Free**: Mecha is free to use and open source, nothing is required to run it and should never require payment.
 
 ## Fun Facts
 
 - Mecha's leveling system uses a special formula to calculate the XP required for each level, making it a unique feature of the bot.
 - The bot is always evolving, with plans to introduce server-specific leveling systems in the future.
+- Mecha is currently in **development**, with regular updates and new features being added frequently.
 
 ## Installation
 
