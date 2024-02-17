@@ -1,0 +1,6 @@
+Flask==3.0.2
+pendulum==3.0.0
+psutil==5.9.8
+pymongo==4.6.1
+Requests==2.31.0
+voltage==0.1.5a8
