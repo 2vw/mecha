@@ -1,20 +1,37 @@
-﻿# Mecha
+﻿# Welcome to Mecha!
 
-> Created using [Voltage](https://github.com/EnokiUN/Voltage)
+Mecha is an innovative bot powered by the [Voltage](https://github.com/EnokiUN/Voltage) framework, designed to enhance your server experience with a variety of interactive features.
 
-## Info
+## Features
 
-> Mecha uses PyMongo for storing information
-> Mecha uses a CONFIG file specifically `config.json`, but you can edit this to your hearts extent.
-> Mecha uses VOLTAGE as a wrapper, created by [EnokiUN](https://github.com/EnokiUN).
+- **Leveling System**: Engage your community with a global leveling system. Users can gain experience and climb up the ranks by actively participating in the server.
+- **Data Storage**: Utilizes PyMongo for efficient and reliable information storage.
+- **Customizable**: Configuration is made simple with the commands within Mecha, which you can tailor to fit your server's needs.
+- **Powered by Voltage**: Mecha is built on top of *Voltage*, a robust python wrapper created by [EnokiUN](https://github.com/EnokiUN), ensuring smooth performance and ease of use.
 
-### Thank you for your interest
+## Fun Facts
 
-### Leveling System
+- Mecha's leveling system uses a special formula to calculate the XP required for each level, making it a unique feature of the bot.
+- The bot is always evolving, with plans to introduce server-specific leveling systems in the future.
 
-> This is the basis for Mecha's global (and in the future hopefully per server) leveling system.
-> In order to check how much xp a user needs, the formula `5 * (lvl ^ 2) + (50 * lvl) + 100 - xp` is used.
+## Installation
 
+To get started with Mecha, follow these simple steps:
+
+1. Clone the repository from [GitHub](https://github.com/YourRepo/Mecha).
+2. Install the required dependencies by running `pip install -r requirements.txt`.
+3. Configure the `config.json` file with your bot token and desired settings.
+4. Run the bot using `python main.py` and watch it come to life in your server!
+
+## Version
+
+Mecha is currently at version 2.0.7a, with regular updates and new features being added frequently.
+
+### Thank You
+
+We appreciate your interest in Mecha! If you have any questions or suggestions, feel free to reach out to the development team.
+
+Enjoy using Mecha in your server!
 | Level | XP needed to level up | Total XP required |
 |:---:|:---:|:---:|
 | 0 | 100 | 0 |
@@ -121,4 +138,4 @@
 
 > The reason it only goes up to level 100, is you can gain 1xp every 10 seconds (by sending a message), so in theory it would take 7.222 months of straight talking every 10 seconds to reach level 100 (from level 0)
 
-#### *Created by William C. 2022 - 2024*
+### *Created by William C. 2022 - 2024*
