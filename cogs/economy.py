@@ -590,6 +590,54 @@ def setup(client) -> commands.Cog:
         else:
             add_user(ctx.author)
             await ctx.send("Please try again!")
+   
+    @eco.command(description="Pay another user from your wallet!", name="pay", aliases=['transfer', 'sendmoney'])
+    @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
+    async def pay(ctx, member: voltage.Member, amount: int):
+        if amount <= 0:
+            embed = voltage.SendableEmbed(
+                title="Error!",
+                description="Please enter a positive amount to pay.",
+                colour="#dc3545"
+            )
+            await ctx.reply(embed=embed)
+            return
+        if ctx.author.id == member.id:
+            embed = voltage.SendableEmbed(
+                title="Error!",
+                description="You cannot pay yourself!",
+                colour="#dc3545"
+            )
+            await ctx.reply(embed=embed)
+            return
+        sender_data = userdb.find_one({"userid": ctx.author.id})
+        if sender_data and sender_data["economy"]["wallet"] >= amount:
+            recipient_data = userdb.find_one({"userid": member.id})
+            if recipient_data:
+                userdb.bulk_write([
+                    pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -amount}}),
+                    pymongo.UpdateOne({"userid": member.id}, {"$inc": {"economy.wallet": -amount}})
+                ])
+                embed = voltage.SendableEmbed(
+                    title="Success!",
+                    description=f"You have successfully paid {amount:,} to {member.display_name}.",
+                    colour="#198754"
+                )
+                await ctx.reply(embed=embed)
+            else:
+                embed = voltage.SendableEmbed(
+                    title="Error!",
+                    description="The recipient does not have an account. Please ask them to create one using `m!add`.",
+                    colour="#dc3545"
+                )
+                await ctx.relpy(embed=embed)
+        else:
+            embed = voltage.SendableEmbed(
+                title="Error!",
+                description="You do not have enough funds in your wallet to make this payment.",
+                colour="#dc3545"
+            )
+            await ctx.reply(embed=embed)
     
     @eco.command(description="Move money back into your wallet!", name="withdraw", aliases=['with', 'towallet', 'wd', 'w'])
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
