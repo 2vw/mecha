@@ -51,6 +51,7 @@ def setup(client) -> commands.Cog:
                 starttime = time.time()
                 messages = await ctx.channel.history(limit=amount)
                 ids = [m.id for m in messages]
+                await ctx.send("Purging...", delete_after=2)
                 requests.delete(
                     f"https://api.revolt.chat/channels/{ctx.channel.id}/messages/bulk", 
                     json={"ids": ids},
