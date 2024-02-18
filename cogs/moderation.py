@@ -48,6 +48,8 @@ def setup(client) -> commands.Cog:
     async def purge(ctx, amount:int=10):
         if commands.has_perms(manage_messages=True) and commands.bot_has_perms(manage_messages=True):
             if amount > 0 and amount < 101:
+                if amount == 1:
+                    amount += 1
                 starttime = time.time()
                 messages = await ctx.channel.history(limit=amount)
                 ids = [m.id for m in messages]

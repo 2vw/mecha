@@ -336,14 +336,14 @@ See you in `{time}`!
                         description=f"{text}\n\n[{reply.content}](/server/{reply.server.id}/channel/{reply.channel.id}/{reply.id})",
                         colour="#00FF00",
                     )
-                    await ctx.send(embed=embed)
+                    await ctx.reply(embed=embed)
                 else:
                     embed = voltage.SendableEmbed(
                         title="Snitch!",
                         description="No reactions were found!",
                         colour="#FF0000",
                     )
-                    await ctx.send(embed=embed)
+                    await ctx.reply(embed=embed)
                 i += 1
         else:
             return await ctx.send("no")
