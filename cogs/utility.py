@@ -333,7 +333,7 @@ See you in `{time}`!
                         text += f":{reaction}: - {len(reply.reactions[reaction])}\n- {user_mentions}\n"
                     embed = voltage.SendableEmbed(
                         title="Snitch!",
-                        description=f"{text}\n\n[{reply.content}](/server/{reply.guild.id}/channel/{reply.channel.id}/{reply.id})",
+                        description=f"{text}\n\n[{reply.content}](/server/{reply.server.id}/channel/{reply.channel.id}/{reply.id})",
                         colour="#00FF00",
                     )
                     await ctx.send(embed=embed)
