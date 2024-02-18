@@ -239,11 +239,15 @@ See you in `{time}`!
     @utility.command(name="suggest", aliases=['suggestion', 'sug', 'request', 'feature', 'idea'], description="Suggest something!")
     @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def suggest(ctx, *, message):
+        if len(message) > 1000:
+            return await ctx.send("Suggestion must be under 1000 characters!")
         embed = voltage.SendableEmbed(
             title = "Suggestion!",
             description = f"""
 **Suggested by:** {ctx.author.mention}
-**Suggestion:** {message}
+**Suggestion From:** {ctx.guild.name}
+**Suggestion:** 
+{message}
             """,
             color="#516BF2"
         )
