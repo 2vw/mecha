@@ -253,5 +253,6 @@ See you in `{time}`!
         )
         channel = client.get_channel(config['SUGGESTION_CHANNEL'])
         await channel.send(embed=embed)
+        await ctx.reply("You're suggestion has been sent! Thanks for suggesting something!")
     
     return utility
