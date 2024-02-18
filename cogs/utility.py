@@ -325,10 +325,12 @@ See you in `{time}`!
                 text = ""
                 if len(reply.reactions) > 0:
                     for reaction in reply.reactions:
-                        text += f":{reaction}: - {len(reply.reactions[reaction])}\n- {reply.reactions[reaction]}\n"
+                        users = reply.reactions[reaction]
+                        user_mentions = ' '.join(f'<\@{u.id}>' for u in users)
+                        text += f":{reaction}: - {len(reply.reactions[reaction])}\n- {user_mentions}\n"
                     embed = voltage.SendableEmbed(
                         title="Snitch!",
-                        description=f"{text}\n[{reply.content}]({reply.jump_url})",
+                        description=f"{text}\n\n[{reply.content}]({reply.jump_url})",
                         colour="#00FF00",
                     )
                     await ctx.send(embed=embed)
