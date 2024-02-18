@@ -62,7 +62,7 @@ def setup(client) -> commands.Cog:
     @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def ban(ctx, member: voltage.Member):
         if commands.has_perms(ban_members=True) and commands.bot_has_perms(ban_members=True):
-            if ctx.author.roles[0] > len(member.roles):
+            if len(ctx.author.roles) > len(member.roles):
                 return await ctx.send(
                     "That user is above your top role! I cannot ban them!"
                 )

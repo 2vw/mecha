@@ -245,7 +245,8 @@ def post():
       "servers": str(len(client.servers)),
     }
   )
-  print(res)
+  if res.status_code != 200:
+    print(res)
 
 def getStats():
   """ GET Stats """
@@ -322,12 +323,19 @@ async def status():
       f"Playing with {len(client.cache.servers)} servers and {len(client.members)} users!",
       f"Watching {len(client.members)} users!",
       f"My waifu is better than yours!!! | {len(client.cache.servers)} servers",
-      f"Jan | {len(client.cache.servers)} servers",
+      f"Lea | {len(client.cache.servers)} servers",
       f"guys my father just came back with the milk O_O - delta2571 | {len(client.cache.servers)} servers",
       f"Revolt > shitcord | {len(client.cache.servers)} servers",
-      f"Jans Onlyfans: onlyfans.com/linustechtips | {len(client.cache.servers)} servers",
+      f"Lea's Onlyfans: onlyfans.com/linustechtips | {len(client.cache.servers)} servers",
       f"William Says HI! | {len(client.cache.servers)} servers",
-    ]
+      f"Playing the numbers game | {len(client.cache.servers)} servers",
+      f"Spreading joy across {len(client.members)} users!",
+      f"Running rampant in {len(client.cache.servers)} servers!",
+      f"Chillin' with {len(client.members)} users!",
+      f"Your friendly bot | {len(client.cache.servers)} servers | {len(client.members)} users",
+      f"Beep boop! I'm a bot | {len(client.cache.servers)} servers",
+      f"Try 'm!help' to get started | In {len(client.cache.servers)} servers"
+      ]
     status = random.choice(statuses)
     await client.set_status(status, voltage.PresenceType.online)
     await asyncio.sleep(5)

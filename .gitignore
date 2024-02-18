@@ -166,3 +166,4 @@ cython_debug/
 .gitignore
 /.gitignore
 /json/config.json
+/asd.txt

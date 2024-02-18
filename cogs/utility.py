@@ -181,7 +181,7 @@ See you in `{time}`!
     async def leaderboard(ctx):
         lb = []
         count = 0
-        for doc in userdb.find().sort([("levels.xp", pymongo.DESCENDING)]).limit(10):
+        for doc in userdb.find().sort([("levels.totalxp", pymongo.DESCENDING)]).limit(10):
             count += 1
             if count <= 3:
                 emoji = ["0", "🥇", "🥈", "🥉"]
@@ -280,7 +280,7 @@ See you in `{time}`!
     async def addprefix(ctx, *, prefix):
         if userdb.find_one({'userid':ctx.author.id}):
             if prefix in userdb.find_one({'userid':ctx.author.id})['prefixes']:
-                return ctx.send("This prefix is already in your list of prefixes!")
+                return await ctx.send("This prefix is already in your list of prefixes!")
             else:
                 userdb.update_one({'userid':ctx.author.id}, {'$push':{'prefixes':prefix}})
                 prefixes = userdb.find_one({'userid':ctx.author.id})['prefixes']
@@ -291,7 +291,7 @@ See you in `{time}`!
                 )
                 await ctx.reply(embed=embed)
         else:
-            return ctx.send("You dont have an account! Create one with the `m!add` command!")
+            return await ctx.send("You dont have an account! Create one with the `m!add` command!")
     
     @utility.command(
         name="removeprefix",
@@ -310,10 +310,37 @@ See you in `{time}`!
                     )
                     await ctx.reply(embed=embed)
                 else:
-                    return ctx.send("That prefix is not in your list!", delete_after=3)
+                    return await ctx.send("That prefix is not in your list!", delete_after=3)
             else:
-                return ctx.send("You can't remove the only prefix!", delete_after=3)
+                return await ctx.send("You can't remove the only prefix!", delete_after=3)
         else:
-            return ctx.send("You dont have an account! Create one with the `m!add` command!", delete_after=3)
+            return await ctx.send("You dont have an account! Create one with the `m!add` command!", delete_after=3)
+    
+    @utility.command(name="snitch", description="Find out who reacted to any message with any reaction!")
+    async def snitch(ctx):
+        if ctx.message.reply_ids:
+            i = 0
+            for message in ctx.message.reply_ids:
+                reply = await ctx.channel.fetch_message(ctx.message.reply_ids[i])
+                text = ""
+                if len(reply.reactions) > 0:
+                    for reaction in reply.reactions:
+                        text += f":{reaction}: - {len(reply.reactions[reaction])}\n- {reply.reactions[reaction]}\n"
+                    embed = voltage.SendableEmbed(
+                        title="Snitch!",
+                        description=f"{text}\n[{reply.content}]({reply.jump_url})",
+                        colour="#00FF00",
+                    )
+                    await ctx.send(embed=embed)
+                else:
+                    embed = voltage.SendableEmbed(
+                        title="Snitch!",
+                        description="No reactions were found!",
+                        colour="#FF0000",
+                    )
+                    await ctx.send(embed=embed)
+                i += 1
+        else:
+            return await ctx.send("no")
     
     return utility
