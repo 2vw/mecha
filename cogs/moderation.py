@@ -1,9 +1,12 @@
-import voltage, asyncio
+import voltage, asyncio, requests
 import time, json
 from functools import wraps
 import datetime
 from datetime import timedelta
 from voltage.ext import commands
+
+with open("json/config.json", "r") as f:
+    config = json.load(f)
 
 def limiter(cooldown: int, *, on_ratelimited = None, key = None):
   cooldowns = {}
@@ -44,9 +47,15 @@ def setup(client) -> commands.Cog:
     @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def purge(ctx, amount:int=10):
         if commands.has_perms(manage_messages=True) and commands.bot_has_perms(manage_messages=True):
-            if amount > 0:
+            if amount > 0 and amount < 101:
                 starttime = time.time()
-                await ctx.channel.purge(amount+1)
+                messages = await ctx.channel.history(limit=amount)
+                ids = [m.id for m in messages]
+                requests.delete(
+                    f"https://api.revolt.chat/channels/{ctx.channel.id}/messages/bulk", 
+                    json={"ids": ids},
+                    headers={"x-bot-token": config['TOKEN']},
+                    )
                 embed = voltage.SendableEmbed(
                     description=f"# Purged!\nPurged {amount} messages in {round(time.time() - starttime, 2)}s!",
                     color="#00FF00",
@@ -54,7 +63,7 @@ def setup(client) -> commands.Cog:
                 await ctx.send(content=ctx.author.mention, embed=embed, delete_after=3)
             else:
                 embed = voltage.SendableEmbed(
-                    description="You can't purge 0 messages!",
+                    description="Please provide a purge amount between 1 and 100!",
                 )
                 await ctx.reply(embed=embed, delete_after=3)
 

@@ -1,4 +1,4 @@
-import voltage, pymongo, os, random, aiohttp
+import voltage, pymongo, os, random, aiohttp, requests
 from voltage.ext import commands
 
 def setup(client) -> commands.Cog:
@@ -44,9 +44,9 @@ def setup(client) -> commands.Cog:
       color="#516BF2",
     )
     await ctx.reply(embed=embed)
-  
+
   @fun.command(
-    description="Get some cute doggo pics + facts!",
+    description="Get some cute doggo pics",
     aliases=[
       "dogpic",
       "doggos",
@@ -54,24 +54,46 @@ def setup(client) -> commands.Cog:
       "dogpics",
       "dogpictures",
       "getdog",
-      "getdogs"
+      "getdogpics"
   ],
     name="dog"
   )
   async def dog(ctx):
     async with aiohttp.ClientSession() as session:
-      request = await session.get("https://some-random-api.ml/img/dog")
-      dogjson = await request.json()
-      request2 = await session.get("https://some-random-api.ml/facts/dog")
-      factjson = await request2.json()
-
+      q = requests.get("https://some-random-api.ml/img/dog/")
+      json = q.json()['link']
     embed = voltage.SendableEmbed(
       title="Doggo!",
       icon_url=ctx.author.display_avatar.url,
-      media=dogjson["link"],
-      colour="#516BF2",
-      description=factjson["fact"],
+      media=json,
+      colour="#516BF2"
     )
     await ctx.send(content="[]()", embed=embed)
+
+  @fun.command(
+    description="Get some cute kitty pics",
+    aliases=[
+      "kitpic",
+      "kitten",
+      "cats",
+      "catpics",
+      "catpictures",
+      "getcat",
+      "getcatpicss"
+  ],
+    name="cat"
+  )
+  async def cat(ctx):
+    async with aiohttp.ClientSession() as session:
+      q = requests.get("https://some-random-api.ml/img/cat/")
+      json = q.json()['link']
+    embed = voltage.SendableEmbed(
+      title="Doggo!",
+      icon_url=ctx.author.display_avatar.url,
+      media=json,
+      colour="#516BF2"
+    )
+    await ctx.send(content="[]()", embed=embed)
+
     
   return fun
