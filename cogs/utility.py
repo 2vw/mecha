@@ -316,6 +316,8 @@ See you in `{time}`!
         else:
             return await ctx.send("You dont have an account! Create one with the `m!add` command!", delete_after=3)
     
+    
+    # thanks to TheBobBobs for the formatting, what a G
     @utility.command(name="snitch", description="Find out who reacted to any message with any reaction!")
     async def snitch(ctx):
         if ctx.message.reply_ids:
@@ -324,13 +326,14 @@ See you in `{time}`!
                 reply = await ctx.channel.fetch_message(ctx.message.reply_ids[i])
                 text = ""
                 if len(reply.reactions) > 0:
+                    print(reply.jump_url)
                     for reaction in reply.reactions:
                         users = reply.reactions[reaction]
                         user_mentions = ' '.join(f'<\@{u.id}>' for u in users)
                         text += f":{reaction}: - {len(reply.reactions[reaction])}\n- {user_mentions}\n"
                     embed = voltage.SendableEmbed(
                         title="Snitch!",
-                        description=f"{text}\n\n[{reply.content}]({reply.jump_url})",
+                        description=f"{text}\n\n[{reply.content}](/server/{reply.guild.id}/channel/{reply.channel.id}/{reply.id})",
                         colour="#00FF00",
                     )
                     await ctx.send(embed=embed)
