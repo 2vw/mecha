@@ -537,7 +537,7 @@ def setup(client) -> commands.Cog:
                     player_value = calculate_hand(player_hand)
                     embed=voltage.SendableEmbed(
                         title=f"{ctx.author.display_name}'s blackjack game",
-                        description=f"You drew a card: {str(player_hand[-1])}\nYour hand: {' '.join(player_hand)} (Total: {player_value})",
+                        description=f"You drew a card: {str(player_hand[-1])}\nYour hand: {' '.join(player_hand)} (Total: {player_value})\n`hit` or `stand`?",
                         colour="#0d6efd"
                     )
                     await ctx.reply(embed=embed)
@@ -547,7 +547,7 @@ def setup(client) -> commands.Cog:
             # Dealer's turn
             embed = voltage.SendableEmbed(
                 title=f"{ctx.author.display_name}'s blackjack game",
-                description=f"Dealer's hand: {' '.join(dealer_hand)} (Total: {dealer_value})",
+                description=f"It's the Dealer's turn.\nDealer's hand: {' '.join(dealer_hand)} (Total: {dealer_value})",
                 colour="#ffc107"
             )
             await ctx.send(embed=embed)
