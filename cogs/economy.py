@@ -474,6 +474,10 @@ def setup(client) -> commands.Cog:
             return await ctx.reply(embed=embed)
         elif userdb.find_one({"userid": ctx.author.id}):
             userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -bet}})
+            s = "S"
+            h = "H"
+            d = "D"
+            c = ":club:"
             deck = [
                 'SA', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'SJ', 'SQ', 'SK',
                 'HA', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7', 'H8', 'H9', 'H10', 'HJ', 'HQ', 'HK',
@@ -504,25 +508,43 @@ def setup(client) -> commands.Cog:
             player_value = calculate_hand(player_hand)
             dealer_value = calculate_hand(dealer_hand)
 
-            # .replace('S', '♠').replace('H', '♥').replace('D', '♦').replace('C', '♣')
-
             # Initial hand display
-            await ctx.send(f"Dealer's hand: {str(dealer_hand[0])} and ?\nYour hand: {' '.join(player_hand)} (Total: {player_value})\n`hit` or `stand`?")
+            embed = voltage.SendableEmbed(
+                title=f"{ctx.author.display_name}'s blackjack game",
+                description=f"Dealer's hand: {str(dealer_hand[0])} and ?\nYour hand: {' '.join(player_hand)} (Total: {player_value})\n`hit` or `stand`?",
+                colour="#44ff44"
+            )
+            await ctx.reply(embed=embed)
 
             # Player's turn
             while True:
                 if player_value == 21:
-                    await ctx.send("Blackjack! You win!")
-                    userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": bet*2}})
+                    embed = voltage.SendableEmbed(
+                        title=f"{ctx.author.display_name}'s blackjack game",
+                        description=f"Blackjack! You win!",
+                        colour="#198754"
+                    )
+                    await ctx.reply(embed=embed)
+                    userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": round(bet*2.5)}})
                     return
                 elif player_value > 21:
-                    await ctx.send(f"You busted with a total of {player_value}. Dealer wins.")
+                    embed = voltage.SendableEmbed(
+                        title=f"{ctx.author.display_name}'s blackjack game",
+                        description=f"You busted with a total of {player_value}. Dealer wins.",
+                        colour="#dc3545"
+                    )
+                    await ctx.reply(embed=embed)
                     return
                 action = await client.wait_for('message', check=lambda m: m.author == ctx.author and m.content.lower() in ['hit', 'stand', 'h', 's'], timeout=30)
                 if any(x in action.content.lower() for x in ['hit', 'h', 'draw']):
                     player_hand.append(deck.pop())
                     player_value = calculate_hand(player_hand)
-                    await ctx.send(f"You drew a card: {str(player_hand[-1])}\nYour hand: {' '.join(player_hand)} (Total: {player_value})")
+                    embed=voltage.SendableEmbed(
+                        title=f"{ctx.author.display_name}'s blackjack game",
+                        description=f"You drew a card: {str(player_hand[-1])}\nYour hand: {' '.join(player_hand)} (Total: {player_value})",
+                        colour="#0d6efd"
+                    )
+                    await ctx.reply(embed=embed)
                 else:
                     break
 
@@ -531,17 +553,43 @@ def setup(client) -> commands.Cog:
             while dealer_value < 17:
                 dealer_hand.append(deck.pop())
                 dealer_value = calculate_hand(dealer_hand)
-                await ctx.send(f"Dealer drew a card: {dealer_hand[-1]}\nDealer's hand: {' '.join(dealer_hand)} (Total: {dealer_value})")
+                text = []
+                text.append(f"Dealer drew a card: {dealer_hand[-1]}\nDealer's hand: {' '.join(dealer_hand)} (Total: {dealer_value})")
+                embed = voltage.SendableEmbed(
+                    title=f"{ctx.author.display_name}'s blackjack game",
+                    description='\n'.join(text),
+                    colour="#ffc107"
+                )
+                if len(text) == 1:
+                    msg = await ctx.send(embed=embed)
+                else:
+                    await msg.edit(embed=embed)
+                
 
             # Determine winner
             if dealer_value > 21 or player_value > dealer_value:
-                await ctx.send(f"Dealer busted with a total of {dealer_value}. You win!")
+                embed = voltage.SendableEmbed(
+                    title=f"{ctx.author.display_name}'s blackjack game",
+                    description=f"You win!\nDealer busted with a total of {dealer_value}.\nYour hand: {' '.join(player_hand)} (Total: {player_value})",
+                    colour="#198754"
+                )
+                await ctx.reply(embed=embed)
                 userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": bet*2}})
             elif dealer_value == player_value:
-                await ctx.send("It's a tie!")
+                embed = voltage.SendableEmbed(
+                    title=f"{ctx.author.display_name}'s blackjack game",
+                    description=f"It's a tie!",
+                    colour="#ffc107"
+                )
+                await ctx.reply(embed=embed)
                 userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": bet}})
             else:
-                await ctx.send(f"Dealer wins with a total of {dealer_value} against your {player_value}.")
+                embed = voltage.SendableEmbed(
+                    title=f"{ctx.author.display_name}'s blackjack game",
+                    description=f"Dealer wins with a total of {dealer_value}.\nYour hand: {' '.join(player_hand)} (Total: {player_value})",
+                    colour="#dc3545"
+                )
+                await ctx.reply(embed=embed)
         else:
             add_user(ctx.author)
             await ctx.send("Please try again!")
