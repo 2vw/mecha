@@ -616,7 +616,8 @@ def setup(client) -> commands.Cog:
             if recipient_data:
                 userdb.bulk_write([
                     pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -amount}}),
-                    pymongo.UpdateOne({"userid": member.id}, {"$inc": {"economy.wallet": -amount}})
+                    pymongo.UpdateOne({"userid": member.id}, {"$inc": {"economy.wallet": -amount}}),
+                    pymongo.UpdateOne({"userid": member.id}, {"$append": {"notifications.inbox": f"{ctx.author.display_name} paid you {amount:,} coins!"}}),
                 ])
                 embed = voltage.SendableEmbed(
                     title="Success!",
@@ -657,7 +658,7 @@ def setup(client) -> commands.Cog:
                             title=ctx.author.display_name,
                             icon_url=ctx.author.display_avatar.url,
                             description=f"You withdrew **all** the money from your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
-                            color="#00FF00",
+                            color="#198754",
                         )
                         await ctx.reply(embed=embed)
                 elif int(amount) < userdata:
@@ -682,7 +683,7 @@ def setup(client) -> commands.Cog:
                     title=ctx.author.display_name,
                     icon_url=ctx.author.display_avatar.url,
                     description="Please enter a valid amount!",
-                    color="#FF0000",
+                    color="#dc3545",
                 )
                 await ctx.reply(embed=embed)
         else:
@@ -705,7 +706,13 @@ def setup(client) -> commands.Cog:
                     )
                 ]
             )
-            return await ctx.reply(f"You claimed your daily reward of `${amount:,}`!\nSee you tomorrow!")
+            embed = voltage.SendableEmbed(
+                title=ctx.author.display_name,
+                icon_url=ctx.author.display_avatar.url,
+                description=f"You claimed your daily reward of `${amount:,}`!",
+                colour="#198754"
+            )
+            return await ctx.reply(embed=embed)
         else:
             await create_account(ctx)
             
