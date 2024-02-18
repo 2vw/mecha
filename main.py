@@ -401,7 +401,7 @@ async def levelstuff(message):
         {"userid":message.author.id},
         {
           "$set":{
-            "levels.lastmessage": int(time.time()) + 10
+            "levels.lastmessage": int(time.time()) + 5
           }
         }
       )
