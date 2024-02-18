@@ -513,6 +513,7 @@ def setup(client) -> commands.Cog:
             while True:
                 if player_value == 21:
                     await ctx.send("Blackjack! You win!")
+                    userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": bet*2}})
                     return
                 elif player_value > 21:
                     await ctx.send(f"You busted with a total of {player_value}. Dealer wins.")

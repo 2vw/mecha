@@ -46,17 +46,17 @@ def setup(client) -> commands.Cog:
         if commands.has_perms(manage_messages=True) and commands.bot_has_perms(manage_messages=True):
             if amount > 0:
                 starttime = time.time()
-                await ctx.channel.purge(amount)
+                await ctx.channel.purge(amount+1)
                 embed = voltage.SendableEmbed(
                     description=f"# Purged!\nPurged {amount} messages in {round(time.time() - starttime, 2)}s!",
                     color="#00FF00",
                 )
-                await ctx.send(content=ctx.author.mention, embed=embed)
+                await ctx.send(content=ctx.author.mention, embed=embed, delete_after=3)
             else:
                 embed = voltage.SendableEmbed(
                     description="You can't purge 0 messages!",
                 )
-                await ctx.reply(embed=embed)
+                await ctx.reply(embed=embed, delete_after=3)
     @mod.command(
         description="Set a custom prefix for this server!",
         aliases=["setprefix", "prefix", "serverprefix", "p"],

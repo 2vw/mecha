@@ -35,7 +35,7 @@ onRoleDelete : "server_role_delete"
 onUserEdit : "user_update"
 '''
 
-import random, pymongo, json, time, asyncio, datetime
+import random, pymongo, json, time, asyncio, datetime, requests
 import voltage, os
 from voltage.ext import commands
 from voltage.errors import CommandNotFound, NotBotOwner, NotEnoughArgs, NotEnoughPerms, NotFoundException, BotNotEnoughPerms, RoleNotFound, UserNotFound, MemberNotFound, ChannelNotFound, HTTPError 
@@ -45,6 +45,8 @@ from functools import wraps
 
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+
+from revoltbots import RBL
 
 with open("json/config.json", "r") as f:
   config = json.load(f)
@@ -218,6 +220,30 @@ def give_xp(user: voltage.User, xp:int):
 
 prefixes = ["m!"]
 client = commands.CommandsClient(prefix=prefixes)
+
+RBList = RBL.RevoltBots(ApiKey=config['RBL_KEY'], botId="01FZB4GBHDVYY6KT8JH4RBX4KR")
+
+def post():
+  """ POST Stats """
+  res = RBList.postStats(3)
+  print(res)
+
+def getStats():
+  """ GET Stats """
+  res = RBList.getStats()
+  print(res)
+
+
+def checkVotes():
+  """ GET Votes """
+  res = RBList.checkVotes()
+  print(res)
+
+
+def getVoter(user: voltage.User):
+  """ Check Voter """
+  res = RBList.checkVoter(userId=user.id)
+  print(res)
 
 async def update():
   print("Started Update Loop")
