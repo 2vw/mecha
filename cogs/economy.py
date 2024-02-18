@@ -474,10 +474,6 @@ def setup(client) -> commands.Cog:
             return await ctx.reply(embed=embed)
         elif userdb.find_one({"userid": ctx.author.id}):
             userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -bet}})
-            s = "S"
-            h = "H"
-            d = "D"
-            c = ":club:"
             deck = [
                 'SA', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'SJ', 'SQ', 'SK',
                 'HA', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7', 'H8', 'H9', 'H10', 'HJ', 'HQ', 'HK',
@@ -549,7 +545,12 @@ def setup(client) -> commands.Cog:
                     break
 
             # Dealer's turn
-            await ctx.send(f"Dealer's hand: {' '.join(dealer_hand)} (Total: {dealer_value})")
+            embed = voltage.SendableEmbed(
+                title=f"{ctx.author.display_name}'s blackjack game",
+                description=f"Dealer's hand: {' '.join(dealer_hand)} (Total: {dealer_value})",
+                colour="#ffc107"
+            )
+            await ctx.send(embed=embed)
             while dealer_value < 17:
                 dealer_hand.append(deck.pop())
                 dealer_value = calculate_hand(dealer_hand)
@@ -560,11 +561,7 @@ def setup(client) -> commands.Cog:
                     description='\n'.join(text),
                     colour="#ffc107"
                 )
-                if len(text) == 1:
-                    msg = await ctx.send(embed=embed)
-                else:
-                    await msg.edit(embed=embed)
-                
+                await ctx.reply(embed=embed)
 
             # Determine winner
             if dealer_value > 21 or player_value > dealer_value:
