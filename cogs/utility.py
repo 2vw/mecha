@@ -245,7 +245,7 @@ See you in `{time}`!
             title = "Suggestion!",
             description = f"""
 **Suggested by:** {ctx.author.mention}
-**Suggestion From:** {ctx.guild.name}
+**Suggestion From:** {ctx.server.name}
 **Suggestion:** 
 {message}
             """,
