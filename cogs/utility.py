@@ -326,7 +326,6 @@ See you in `{time}`!
                 reply = await ctx.channel.fetch_message(ctx.message.reply_ids[i])
                 text = ""
                 if len(reply.reactions) > 0:
-                    print(reply.jump_url)
                     for reaction in reply.reactions:
                         users = reply.reactions[reaction]
                         user_mentions = ' '.join(f'<\@{u.id}>' for u in users)

@@ -35,7 +35,7 @@ def setup(client) -> commands.Cog:
     @mod.command(description="Sets the nickname of a user!", name="nickname", aliases=['setnick', 'setusername', 'snick', 'suser'])
     @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def nickname(ctx, member: voltage.User, *, nick):
-        if commands.has_perms(manage_nicknames=True) and commands.bot_has_perms(manage_nicknames=True):
+        if ctx.author.permissions.manage_nicknames and ctx.me.permissions.manage_nicknames:
             try:
                 await member.change_nickname(nick)
                 await ctx.reply(f"Changed {member.name}'s nickname to {nick}!")
@@ -46,7 +46,7 @@ def setup(client) -> commands.Cog:
     @mod.command(description="BEGONE MESSAGES!", name="purge", aliases=["clear", "c", "prune"])
     @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def purge(ctx, amount:int=10):
-        if commands.has_perms(manage_messages=True) and commands.bot_has_perms(manage_messages=True):
+        if ctx.author.permissions.manage_messages and ctx.me.permissions.manage_messages:
             if amount > 0 and amount < 101:
                 if amount == 1:
                     amount += 1
@@ -69,6 +69,12 @@ def setup(client) -> commands.Cog:
                     description="Please provide a purge amount between 1 and 100!",
                 )
                 await ctx.reply(embed=embed, delete_after=3)
+        else:
+            embed = voltage.SendableEmbed(
+                description="You `or me` doesn't have the required permission(s) to use this command!",
+                color="#FF0000",
+            )
+            await ctx.reply(embed=embed)
 
     @mod.command(description="Ban a user from your server!")
     @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
