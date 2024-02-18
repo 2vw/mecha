@@ -238,7 +238,13 @@ RBList = RBL.RevoltBots(ApiKey=config['RBL_KEY'], botId="01FZB4GBHDVYY6KT8JH4RBX
 
 def post():
   """ POST Stats """
-  res = RBList.postStats(3)
+  res = requests.post(
+    url="https://revoltbots.org/api/v1/bots/stats",
+    headers={
+      "Authorization": config['RBL_KEY'],
+      "servers": str(len(client.servers)),
+    }
+  )
   print(res)
 
 def getStats():
@@ -341,6 +347,7 @@ async def stayon():
 
 @client.listen("ready")
 async def ready():
+  post()
   with open("json/data.json", "r") as f:
     data = json.load(f)
     data['uptime'] =  int(time.time())
