@@ -236,4 +236,18 @@ See you in `{time}`!
         except:
             await ctx.reply("Server not found! Or the server is offline!\n`TIP: the server name might end in .net or .com! Try both!`")
     
+    @utility.command(name="suggest", aliases=['suggestion', 'sug', 'request', 'feature', 'idea'], description="Suggest something!")
+    @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
+    async def suggest(ctx, *, message):
+        embed = voltage.SendableEmbed(
+            title = "Suggestion!",
+            description = f"""
+**Suggested by:** {ctx.author.mention}
+**Suggestion:** {message}
+            """,
+            color="#516BF2"
+        )
+        channel = client.get_channel(config['SUGGESTION_CHANNEL'])
+        await channel.send(embed=embed)
+    
     return utility
