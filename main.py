@@ -53,6 +53,32 @@ with open("json/config.json", "r") as f:
 
 DBclient = MongoClient(config['MONGOURI'], server_api=ServerApi('1'))
 
+async def get_prefix(message, client):
+  if userdb.find_one({"userid": message.author.id}):
+    return userdb.find_one({"userid": message.author.id})['prefixes']
+  else:
+    return ['m!']
+                                                          
+class HelpCommand(commands.HelpCommand):
+  async def send_help(self, ctx: commands.CommandContext):
+    embed = voltage.SendableEmbed(
+      title="Help",
+      description=f"Use `{ctx.prefix}help <command>` to get more informtion on a command.",
+      colour="#516BF2",
+      icon_url=ctx.author.display_avatar.url
+    )
+    text = "\n### **No Category**\n"
+    for command in self.client.commands.values():
+      if command.cog is None:
+        text += f"> {command.name}\n"
+    for i in self.client.cogs.values():
+      text += f"\n### **{i.name}**\n{i.description}\n"
+      for j in i.commands:
+        text += f"\n> {j.name}"
+    if embed.description:
+      embed.description += text
+    return await ctx.reply(embed=embed)
+      
 db = DBclient['beta']
 userdb = db['users']
 serverdb = db['servers']
@@ -69,23 +95,7 @@ import time
         {'userid':user['userid']}, 
         {
           '$set':{
-            'levels.totalxp':0
-          }
-        }
-      ),
-      pymongo.UpdateOne(
-        {'userid':user['userid']},
-        {
-          '$set':{
-            'levels.xp':0
-          }
-        }
-      ),
-      pymongo.UpdateOne(
-        {'userid':user['userid']},
-        {
-          '$set':{
-            'levels.level':0
+            'prefixes':["m!"]
           }
         }
       )
@@ -133,11 +143,14 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
         "userid": user.id,
         "levels": {
             "xp": 0,
-            "level": 1
+            "level": 0,
+            "totalxp": 0
         },
+        "prefixes": [],
         "economy": {
             "wallet": 0,
             "bank": 0,
+            "total": 0,
             "data": {
                 "inventory": {
                     "bank_loan": 1
@@ -219,7 +232,7 @@ def give_xp(user: voltage.User, xp:int):
   )
 
 prefixes = ["m!"]
-client = commands.CommandsClient(prefix=prefixes)
+client = commands.CommandsClient(prefix=get_prefix, help_command=HelpCommand)
 
 RBList = RBL.RevoltBots(ApiKey=config['RBL_KEY'], botId="01FZB4GBHDVYY6KT8JH4RBX4KR")
 
@@ -406,6 +419,14 @@ async def on_message(message):
   if message.channel.id == message.author.id:
     return
   asyncio.create_task(levelstuff(message)) # pièce de résistance
+  if message.content.startswith("<@01FZB4GBHDVYY6KT8JH4RBX4KR>"):
+    prefix = userdb.find_one({"userid":message.author.id})['prefixes']
+    embed = voltage.SendableEmbed(
+      title="Prefix",
+      description=f"Your prefixes are:\n ```\n{'\n'.join(prefix)}\n```\nIf you want to change your prefix, type `m!prefix <new prefix>`!",
+      colour="#198754",
+    )
+    await message.reply(embed=embed)
   await client.handle_commands(message) # so everything else doesnt trip over its clumsy ass selves.
 
 @client.listen("server_added")
@@ -455,12 +476,7 @@ async def on_message_error(error: Exception, message):
     )
     return await message.reply(message.author.mention, embed=embed)
   elif isinstance(error, HTTPError):
-    embed = voltage.SendableEmbed(
-      title=random.choice(errormsg),
-      description="You.. You rate limited me! How dare you! `you've been banned for 1 hour.`",
-      color="#516BF2"
-    )
-    await message.reply(message.author.mention, embed=embed)
+    print(error)
   elif isinstance(error, UserNotFound):
     embed = voltage.SendableEmbed(
       title=random.choice(errormsg),

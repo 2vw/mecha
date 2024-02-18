@@ -255,4 +255,65 @@ See you in `{time}`!
         await channel.send(embed=embed)
         await ctx.reply("You're suggestion has been sent! Thanks for suggesting something!")
     
+    @utility.command(
+        name="prefixes",
+        aliases=['p', 'prefix'],
+        description="Get your personal line of prefixes!",
+    )
+    async def prefixes(ctx):
+        if userdb.find_one({'userid':ctx.author.id}):
+            prefixes = userdb.find_one({'userid':ctx.author.id})['prefixes']
+            embed = voltage.SendableEmbed(
+                title="Your prefixes!",
+                description=f"Your prefixes are:\n ```\n{'\n'.join(prefixes)}\n```",
+                colour="#516BF2",
+            )
+            await ctx.reply(embed=embed)
+        else:
+            return ctx.send("You dont have an account! Create one with the `m!add` command!")
+    
+    @utility.command(
+        name="addprefix",
+        aliases=['ap', 'newprefix', 'add-prefix'],
+        description="Add a prefix to your personal line of prefixes!",
+    )
+    async def addprefix(ctx, *, prefix):
+        if userdb.find_one({'userid':ctx.author.id}):
+            if prefix in userdb.find_one({'userid':ctx.author.id})['prefixes']:
+                return ctx.send("This prefix is already in your list of prefixes!")
+            else:
+                userdb.update_one({'userid':ctx.author.id}, {'$push':{'prefixes':prefix}})
+                prefixes = userdb.find_one({'userid':ctx.author.id})['prefixes']
+                embed = voltage.SendableEmbed(
+                    title="Added a new prefix to your list!",
+                    description=f"Added `{prefix}` to your list of {len(prefixes)}!\nTo see your prefixes, type `m!prefixes` or alternatively; mention me!",
+                    colour="#516BF2",
+                )
+                await ctx.reply(embed=embed)
+        else:
+            return ctx.send("You dont have an account! Create one with the `m!add` command!")
+    
+    @utility.command(
+        name="removeprefix",
+        aliases=['rp', 'remove-prefix'],
+        description="Remove a prefix from your personal line of prefixes!",
+    )
+    async def removeprefix(ctx, *, prefix):
+        if userdb.find_one({'userid':ctx.author.id}):
+            if len(userdb.find_one({'userid':ctx.author.id})['prefixes']) > 1 :
+                if prefix not in userdb.find_one({'userid':ctx.author.id})['prefixes']:
+                    userdb.update_one({'userid':ctx.author.id}, {'$pull':{'prefixes':prefix}})
+                    prefixes = userdb.find_one({'userid':ctx.author.id})['prefixes']
+                    embed = voltage.SendableEmbed(
+                        title="Removed a prefix from your list!",
+                        description=f"Removed `{prefix}` from your list of {len(prefixes)}!\nTo see your prefixes, type `m!prefixes` or alternatively; mention me!",
+                    )
+                    await ctx.reply(embed=embed)
+                else:
+                    return ctx.send("That prefix is not in your list!", delete_after=3)
+            else:
+                return ctx.send("You can't remove the only prefix!", delete_after=3)
+        else:
+            return ctx.send("You dont have an account! Create one with the `m!add` command!", delete_after=3)
+    
     return utility

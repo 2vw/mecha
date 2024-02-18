@@ -57,20 +57,6 @@ def setup(client) -> commands.Cog:
                     description="You can't purge 0 messages!",
                 )
                 await ctx.reply(embed=embed, delete_after=3)
-    @mod.command(
-        description="Set a custom prefix for this server!",
-        aliases=["setprefix", "prefix", "serverprefix", "p"],
-        name="sp"
-    )
-    @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
-    async def sp(ctx, prefix):
-      if commands.has_perms(manage_server=True) and commands.bot_has_perms(manager_server=True):
-        embed = voltage.SendableEmbed(
-            title="Added a new prefix to your list!",
-            description=f"Added `{prefix}` to your list!",
-            colour="#516BF2",
-            )
-        return await ctx.send(content=ctx.author.mention, embed=embed)
 
     @mod.command(description="Ban a user from your server!")
     @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
