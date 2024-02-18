@@ -49,7 +49,7 @@ def setup(client) -> commands.Cog:
 ## Bot Stats
 > Servers: `{len(client.servers)}`
 > Users: `{len(client.users)}`
-> Uptime: `{str(datetime.timedelta(seconds=int(round(time.time() - uptime))))}s`
+> [Uptime](https://stats.uptimerobot.com/2JgmlCVB0O): `{str(datetime.timedelta(seconds=int(round(time.time() - uptime))))}s`
         """,
         colour="#44ff44"
         ) # fix the uptime formatting at some point i swear to god
