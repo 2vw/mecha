@@ -435,13 +435,18 @@ async def on_message(message):
     return
   asyncio.create_task(levelstuff(message)) # pièce de résistance
   if message.content.startswith("<@01FZB4GBHDVYY6KT8JH4RBX4KR>"):
-    prefix = userdb.find_one({"userid":message.author.id})['prefixes']
-    embed = voltage.SendableEmbed(
-      title="Prefix",
-      description=f"Your prefixes are:\n ```\n{'\n'.join(prefix)}\n```\nIf you want to change your prefix, type `m!prefix <new prefix>`!",
-      colour="#198754",
-    )
-    await message.reply(embed=embed)
+    if userdb.find_one({"userid":message.author.id}):
+      prefix = userdb.find_one({"userid":message.author.id})['prefixes']
+      if prefix == []:
+        prefix = ["m!"]
+      embed = voltage.SendableEmbed(
+        title="Prefix",
+        description=f"Your prefixes are:\n ```\n{'\n'.join(prefix)}\n```\nIf you want to change your prefix, type `m!prefix <new prefix>`!",
+        colour="#198754",
+      )
+      await message.reply(embed=embed)
+    else:
+      add_user(message.author)
   await client.handle_commands(message) # so everything else doesnt trip over its clumsy ass selves.
 
 @client.listen("server_added")
