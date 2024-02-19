@@ -593,7 +593,9 @@ def setup(client) -> commands.Cog:
    
     @eco.command(description="Pay another user from your wallet!", name="pay", aliases=['transfer', 'sendmoney'])
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
-    async def pay(ctx, member: voltage.Member, amount: int):
+    async def pay(ctx, member: voltage.Member, amount:int):
+        if not str(amount).isinstance(int):
+            return await ctx.reply("Please enter a valid amount!")
         if amount <= 0:
             embed = voltage.SendableEmbed(
                 title="Error!",

@@ -46,7 +46,7 @@ def setup(client) -> commands.Cog:
     @mod.command(description="BEGONE MESSAGES!", name="purge", aliases=["clear", "c", "prune"])
     @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def purge(ctx, amount:int=10):
-        if ctx.author.permissions.manage_messages and ctx.me.permissions.manage_messages:
+        if ctx.author.permissions.manage_messages or ctx.author.id == ctx.server.owner.id and ctx.me.permissions.manage_messages:
             if amount > 0 and amount < 101:
                 if amount == 1:
                     amount += 1
@@ -69,7 +69,7 @@ def setup(client) -> commands.Cog:
                     description="Please provide a purge amount between 1 and 100!",
                 )
                 await ctx.reply(embed=embed, delete_after=3)
-        else:
+        elif not ctx.author.permissions.manage_messages:
             embed = voltage.SendableEmbed(
                 description="You `or me` doesn't have the required permission(s) to use this command!",
                 color="#FF0000",

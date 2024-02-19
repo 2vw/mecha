@@ -525,6 +525,13 @@ async def on_message_error(error: Exception, message):
       colour="#516BF2"
     )
     return await message.reply(message.author.mention, embed=embed)
+  elif isinstance(error, ValueError):
+    embed = voltage.SendableEmbed(
+      title=random.choice(errormsg),
+      description="You provided a value that isnt a number!",
+      colour="#516BF2"
+    )
+    return await message.reply(message.author.mention, embed=embed)
   else:
     raise(error)
 
