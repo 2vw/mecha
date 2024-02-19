@@ -81,13 +81,17 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
         "_id": id,
         "username": user.name,
         "userid": user.id,
-        "economy": {
-            "bank": 0,
-            "wallet": 1
+        "levels": {
+            "xp": 0,
+            "level": 0,
+            "totalxp": 0,
+            "lastmessage": time.time()
         },
+        "prefixes": [],
         "economy": {
             "wallet": 0,
             "bank": 0,
+            "total": 0,
             "data": {
                 "inventory": {
                     "bank_loan": 1

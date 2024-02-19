@@ -95,7 +95,7 @@ import time
         {'userid':user['userid']}, 
         {
           '$set':{
-            'prefixes':["m!"]
+            "levels.lastmessage": time.time()
           }
         }
       )
@@ -144,7 +144,8 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
         "levels": {
             "xp": 0,
             "level": 0,
-            "totalxp": 0
+            "totalxp": 0,
+            "lastmessage": time.time()
         },
         "prefixes": [],
         "economy": {
