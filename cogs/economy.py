@@ -4,6 +4,8 @@ from voltage.ext import commands
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
+sep = "\n"
+
 def strfdelta(tdelta, fmt):
     d = {"days": tdelta.days}
     d["hours"], rem = divmod(tdelta.seconds, 3600)
@@ -118,7 +120,7 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
     })
     return "Added"
   except Exception as e:
-    return f"Sorry, An Error Occured!\n\n```\n{e}\n```"
+    return f"Sorry, An Error Occured!{sep}{sep}```{sep}{e}{sep}```"
 
 async def buy_item(ctx, item:str, price:int): # this sucks but it works
     if userdb.find_one({"userid": ctx.author.id}):
@@ -164,7 +166,7 @@ def setup(client) -> commands.Cog:
         await ctx.send("You dont have a bank account registered in our database! I can resgister you now, is that okay? *(Yes/No)*")
         message = await client.wait_for("message", check=lambda message: message.author.id != client.user.id, timeout=15)
         if any(x in message.content.lower() for x in ["yes", "y", "yea", "yeah", "yup"]):
-            return await ctx.send(add_user())
+            return await ctx.send(add_user(ctx.author))
         else:
             return await ctx.send("Oh... Nevermind then!")
 
@@ -191,7 +193,7 @@ def setup(client) -> commands.Cog:
                 items = []
             if len(items) == 0:
                 items = ["You have no items :boohoo:"]
-            embed = voltage.SendableEmbed(title=f"{user.name}'s balance", icon_url=user.display_avatar.url, description=f"**Wallet Balance:**\n> ${userdata['economy']["wallet"]:,}\n\n**Bank Balance:**\n> ${userdata['economy']['bank']:,}\n**Inventory:**\n> {'\n> '.join(itemstuff)}", colour="#516BF2")
+            embed = voltage.SendableEmbed(title=f"{user.name}'s balance", icon_url=user.display_avatar.url, description=f"**Wallet Balance:**{sep}> ${userdata['economy']['wallet']:,}{sep}{sep}**Bank Balance:**{sep}> ${userdata['economy']['bank']:,}{sep}**Inventory:**{sep}> {f'{sep}> '.join(itemstuff)}", colour="#516BF2")
             await ctx.send(embed=embed)
         else:
             await ctx.send(
@@ -199,7 +201,7 @@ def setup(client) -> commands.Cog:
             )
             message = await client.wait_for("message", check=lambda message: message.author.id != client.user.id, timeout=15)
             if any(x in message.content.lower() for x in ["yes", "y", "yea", "yeah", "yup"]):
-                return await ctx.send(add_user())
+                return await ctx.send(add_user(ctx.author))
             else:
                 return await ctx.send("Oh... Nevermind then!")
 
@@ -400,7 +402,7 @@ def setup(client) -> commands.Cog:
             count += 1
             if count <= 3:
                 emoji = ["0", "🥇", "🥈", "🥉"]
-                lb.append(f"{"#" * count} **{emoji[count]}** {doc['username']}\n#### **${total:,}**")
+                lb.append(f"{'#' * count} **{emoji[count]}** {doc['username']}{sep}#### **${total:,}**")
             elif count == 4:
                 lb.append(f"**#4** -> {doc['username']}: {total:,}")
             else:
@@ -431,7 +433,7 @@ def setup(client) -> commands.Cog:
                         embed = voltage.SendableEmbed(
                             title=ctx.author.display_name,
                             icon_url=ctx.author.display_avatar.url,
-                            description=f"You deposited **all** your money into your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
+                            description=f"You deposited **all** your money into your bank account! {sep}You have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
                             color="#00FF00",
                         )
                         await ctx.reply(embed=embed)
@@ -446,7 +448,7 @@ def setup(client) -> commands.Cog:
                     embed = voltage.SendableEmbed(
                         title=ctx.author.display_name,
                         icon_url=ctx.author.display_avatar.url,
-                        description=f"You deposited `${amt:,}` into your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
+                        description=f"You deposited `${amt:,}` into your bank account! {sep}You have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
                         color="#00FF00",
                     )
                     await ctx.reply(embed=embed)
@@ -472,7 +474,7 @@ def setup(client) -> commands.Cog:
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
                 icon_url=ctx.author.display_avatar.url,
-                description=f"You don't have that much money in your wallet!\n*(lol poor fella)*",
+                description=f"You don't have that much money in your wallet!{sep}*(lol poor fella)*",
                 colour="#FF0000"
             )
             return await ctx.reply(embed=embed)
@@ -511,7 +513,7 @@ def setup(client) -> commands.Cog:
             # Initial hand display
             embed = voltage.SendableEmbed(
                 title=f"{ctx.author.display_name}'s blackjack game",
-                description=f"Dealer's hand: {str(dealer_hand[0])} and ?\nYour hand: {' '.join(player_hand)} (Total: {player_value})\n`hit` or `stand`?",
+                description=f"Dealer's hand: {str(dealer_hand[0])} and ?{sep}Your hand: {' '.join(player_hand)} (Total: {player_value}){sep}`hit` or `stand`?",
                 colour="#44ff44"
             )
             await ctx.reply(embed=embed)
@@ -541,7 +543,7 @@ def setup(client) -> commands.Cog:
                     player_value = calculate_hand(player_hand)
                     embed=voltage.SendableEmbed(
                         title=f"{ctx.author.display_name}'s blackjack game",
-                        description=f"You drew a card: {str(player_hand[-1])}\nYour hand: {' '.join(player_hand)} (Total: {player_value})\n`hit` or `stand`?",
+                        description=f"You drew a card: {str(player_hand[-1])}{sep}Your hand: {' '.join(player_hand)} (Total: {player_value}){sep}`hit` or `stand`?",
                         colour="#0d6efd"
                     )
                     await ctx.reply(embed=embed)
@@ -551,7 +553,7 @@ def setup(client) -> commands.Cog:
             # Dealer's turn
             embed = voltage.SendableEmbed(
                 title=f"{ctx.author.display_name}'s blackjack game",
-                description=f"It's the Dealer's turn.\nDealer's hand: {' '.join(dealer_hand)} (Total: {dealer_value})",
+                description=f"It's the Dealer's turn.{sep}Dealer's hand: {' '.join(dealer_hand)} (Total: {dealer_value})",
                 colour="#ffc107"
             )
             await ctx.send(embed=embed)
@@ -559,7 +561,7 @@ def setup(client) -> commands.Cog:
                 dealer_hand.append(deck.pop())
                 dealer_value = calculate_hand(dealer_hand)
                 text = []
-                text.append(f"Dealer drew a card: {dealer_hand[-1]}\nDealer's hand: {' '.join(dealer_hand)} (Total: {dealer_value})")
+                text.append(f"Dealer drew a card: {dealer_hand[-1]}{sep}Dealer's hand: {' '.join(dealer_hand)} (Total: {dealer_value})")
                 embed = voltage.SendableEmbed(
                     title=f"{ctx.author.display_name}'s blackjack game",
                     description='\n'.join(text),
@@ -571,7 +573,7 @@ def setup(client) -> commands.Cog:
             if dealer_value > 21 or player_value > dealer_value:
                 embed = voltage.SendableEmbed(
                     title=f"{ctx.author.display_name}'s blackjack game",
-                    description=f"You win!\nDealer busted with a total of {dealer_value}.\nYour hand: {' '.join(player_hand)} (Total: {player_value})",
+                    description=f"You win!{sep}Dealer busted with a total of {dealer_value}.{sep}Your hand: {' '.join(player_hand)} (Total: {player_value})",
                     colour="#198754"
                 )
                 await ctx.reply(embed=embed)
@@ -587,7 +589,7 @@ def setup(client) -> commands.Cog:
             else:
                 embed = voltage.SendableEmbed(
                     title=f"{ctx.author.display_name}'s blackjack game",
-                    description=f"Dealer wins with a total of {dealer_value}.\nYour hand: {' '.join(player_hand)} (Total: {player_value})",
+                    description=f"Dealer wins with a total of {dealer_value}.{sep}Your hand: {' '.join(player_hand)} (Total: {player_value})",
                     colour="#dc3545"
                 )
                 await ctx.reply(embed=embed)
@@ -663,7 +665,7 @@ def setup(client) -> commands.Cog:
                         embed = voltage.SendableEmbed(
                             title=ctx.author.display_name,
                             icon_url=ctx.author.display_avatar.url,
-                            description=f"You withdrew **all** the money from your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
+                            description=f"You withdrew **all** the money from your bank account! {sep}You have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
                             color="#198754",
                         )
                         await ctx.reply(embed=embed)
@@ -678,7 +680,7 @@ def setup(client) -> commands.Cog:
                     embed = voltage.SendableEmbed(
                         title=ctx.author.display_name,
                         icon_url=ctx.author.display_avatar.url,
-                        description=f"You withdrew `${amt:,}` from your bank account! \nYou have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
+                        description=f"You withdrew `${amt:,}` from your bank account! {sep}You have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
                         color="#00FF00",
                     )
                     await ctx.reply(embed=embed)
@@ -696,7 +698,7 @@ def setup(client) -> commands.Cog:
             await create_account(ctx)
 
     @eco.command(name="daily", aliases=["dailies"], description="Claim your daily reward! (5,000 - 15,000 coins!)")
-    @limiter(86400, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), "{hours}h {minutes}m {seconds}s")}`!"))
+    @limiter(86400, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), '{hours}h {minutes}m {seconds}s')}`!"))
     async def daily(ctx):
         if userdb.find_one({"userid": ctx.author.id}):
             amount = random.randint(5000, 15000)
@@ -731,7 +733,7 @@ def setup(client) -> commands.Cog:
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
                 icon_url=ctx.author.display_avatar.url,
-                description=f"## **Available Jobs:**\n{'\n> '.join(joblist)}",
+                description=f"## **Available Jobs:**{sep}{f'{sep}> '.join(joblist)}",
             )
             return await ctx.send(embed=embed)
         elif any(x in job.lower() for x in short_forms):

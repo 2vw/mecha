@@ -1,17 +1,3 @@
-# """
-# OK SO TODO IS THIS A GOOD IDEA?
-# IF NOT, JUST DON'T USE IT
-# IT'S A MESS
-# ANYWAYS LOOK AT THE FLASK SITE AND SEE IF YOU CAN IMPLEMENT IT
-# THEN ADD IT TO THE COG IF POSSIBLE
-#
-#
-#
-# PUSH TO GIT LATER PLEASEEEEEEE!!!!!!!!
-# pushed to git hopefully
-# tis a mess lol
-# """
-
 # IMPORTANT SHIT
 '''
 onReady : "ready"
@@ -51,6 +37,7 @@ from revoltbots import RBL
 with open("json/config.json", "r") as f:
   config = json.load(f)
 
+sep = "\n"
 DBclient = MongoClient(config['MONGOURI'], server_api=ServerApi('1'))
 
 async def get_prefix(message, client):
@@ -67,14 +54,14 @@ class HelpCommand(commands.HelpCommand):
       colour="#516BF2",
       icon_url=ctx.author.display_avatar.url
     )
-    text = "\n### **No Category**\n"
+    text = f"{sep}### **No Category**{sep}"
     for command in self.client.commands.values():
       if command.cog is None:
-        text += f"> {command.name}\n"
+        text += f"> {command.name}{sep}"
     for i in self.client.cogs.values():
-      text += f"\n### **{i.name}**\n{i.description}\n"
+      text += f"{sep}### **{i.name}**{sep}{i.description}{sep}"
       for j in i.commands:
-        text += f"\n> {j.name}"
+        text += f"{sep}> {j.name}"
     if embed.description:
       embed.description += text
     return await ctx.reply(embed=embed)
@@ -114,7 +101,7 @@ def update_level(user:voltage.User):
         pymongo.UpdateOne({'userid':user.id}, {'$set':{'levels.xp':0}}),
         pymongo.UpdateOne({'userid':user.id}, {'$inc':{'levels.totalxp':xp}}),
         pymongo.UpdateOne({'userid':user.id}, {'$inc':{'economy.bank':100 * lvl + amt}}),
-        pymongo.UpdateOne({'userid':user.id}, {'$push':{'notifications.inbox':f"Congratulations on leveling up to level {lvl+1}!\nYou've recieved {100 * lvl + amt} coins as a reward!"}}),
+        pymongo.UpdateOne({'userid':user.id}, {'$push':{'notifications.inbox':f"Congratulations on leveling up to level {lvl+1}!{sep}You've recieved {100 * lvl + amt} coins as a reward!"}}),
       ])
       return True
     else:
@@ -178,7 +165,7 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
     })
     return "Added"
   except Exception as e:
-    return f"Sorry, An Error Occured!\n\n```\n{e}\n```"
+    return f"Sorry, An Error Occured!{sep}{sep}```{sep}{e}{sep}```"
 
 async def update_stats(users, servers):
   if settingsdb.find_one(
@@ -214,7 +201,7 @@ def pingDB(): # ping the database; never gonna use this, might need it, add it.
     DBclient.admin.command('ping')
     return "[+] Pinged your deployment. Successfully connected to MongoDB!"
   except Exception as e:
-    return f"[-] ERROR! \n\n\n{e}"
+    return f"[-] ERROR! {sep}{sep}{sep}{e}"
 
 def get_user(user: voltage.User):
   if user := userdb.find_one({"userid": user.id}):
@@ -347,7 +334,7 @@ async def stayon():
     channel = client.get_channel(config['REMIND_CHANNEL'])
     embed = voltage.SendableEmbed(
       title="I'm online!",
-      description=f"I'm online!\nIts been {i} hour(s)!",
+      description=f"I'm online!{sep}Its been {i} hour(s)!",
     )
     await channel.send(embed=embed)
     await asyncio.sleep(60*60)
@@ -368,7 +355,7 @@ async def ready():
 @client.command()
 @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
 async def foo(ctx):
-  await ctx.send(f"Not on cooldown, but now you are!\nCooldown is `5` seconds!")
+  await ctx.send(f"Not on cooldown, but now you are!{sep}Cooldown is `5` seconds!")
 
 async def oldlevelstuff(message): # running this in the on_message event drops the speed down to your grandmothers crawl. keep this in a function pls
   if update_level(message.author):
@@ -422,7 +409,7 @@ async def levelstuff(message):
         }
       )
     else:
-      return f"{message.author.name} is on cooldown for {userdb.find_one({"userid":message.author.id})['levels']['lastmessage'] - int(time.time()):.0f} seconds"
+      return f"{message.author.name} is on cooldown for {userdb.find_one({'userid':message.author.id})['levels']['lastmessage'] - int(time.time()):.0f} seconds"
   else:
     return add_user(message)
 
@@ -442,7 +429,7 @@ async def on_message(message):
         prefix = ["m!"]
       embed = voltage.SendableEmbed(
         title="Prefix",
-        description=f"Your prefixes are:\n ```\n{'\n'.join(prefix)}\n```\nIf you want to change your prefix, type `m!prefix <new prefix>`!",
+        description=f"Your prefixes are:{sep} ```{sep}{f'{sep}'.join(prefix)}{sep}```{sep}If you want to change your prefix, type `m!prefix <new prefix>`!",
         colour="#198754",
       )
       await message.reply(embed=embed)
@@ -451,11 +438,11 @@ async def on_message(message):
   await client.handle_commands(message) # so everything else doesnt trip over its clumsy ass selves.
 
 @client.listen("server_added")
-async def server_added(server):
-  channel = client.cache.get_channel("01FZBBHNBWMH46TWN0HVJT1W5F")
+async def server_added(message):
+  channel = client.get_channel(config['SERVER_CHANNEL'])
   embed = voltage.SendableEmbed(
     title="New Server alert!",
-    description=f"## Just Joined a new server!\nNow at **{len(client.servers)}** servers!",
+    description=f"## Just Joined a new server!{sep}Now at **{len(client.servers)}** servers!",
     color="#516BF2",
   )
   await channel.send(content="[]()", embed=embed)

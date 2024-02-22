@@ -5,6 +5,8 @@ from voltage.ext import commands
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
+sep = "\n"
+
 def limiter(cooldown: int, *, on_ratelimited = None, key = None):
   cooldowns = {}
   getter = key or (lambda ctx, *_1, **_2: ctx.author.id)
@@ -185,9 +187,9 @@ See you in `{time}`!
             count += 1
             if count <= 3:
                 emoji = ["0", "🥇", "🥈", "🥉"]
-                lb.append(f"{"#" * count} **{emoji[count]}** {doc['username']}\n**LVL{doc['levels']['level']}** | **{doc['levels']['totalxp'] + doc['levels']['xp']}XP**")
+                lb.append(f"{'#' * count} **{emoji[count]}** {doc['username']}{sep}**LVL{doc['levels']['level']}** | **{doc['levels']['totalxp'] + doc['levels']['xp']}XP**")
             elif count == 4:
-                lb.append(f"\n**#4** -> {doc['username']}: **LVL {doc['levels']['level']}** | **{doc['levels']['totalxp'] + doc['levels']['xp']} XP**")
+                lb.append(f"{sep}**#4** -> {doc['username']}: **LVL {doc['levels']['level']}** | **{doc['levels']['totalxp'] + doc['levels']['xp']} XP**")
             else:
                 lb.append(f"**#{count}** -> {doc['username']}: **LVL {doc['levels']['level']}** | **{doc['levels']['totalxp'] + doc['levels']['xp']} XP**")
         embed = voltage.SendableEmbed(
@@ -229,7 +231,7 @@ See you in `{time}`!
             status = server.status()
             embed = voltage.SendableEmbed(
                 title=f"{servername}'s Information",
-                description=f"**Players online:**\n`{status.players.online}` Currently Online\n**Server Latency:**\n`{round(status.latency, 2)}ms`",
+                description=f"**Players online:**{sep}`{status.players.online}` Currently Online{sep}**Server Latency:**{sep}`{round(status.latency, 2)}ms`",
                 colour="#516BF2",
             )
             await ctx.reply(embed=embed)
@@ -265,7 +267,7 @@ See you in `{time}`!
             prefixes = userdb.find_one({'userid':ctx.author.id})['prefixes']
             embed = voltage.SendableEmbed(
                 title="Your prefixes!",
-                description=f"Your prefixes are:\n ```\n{'\n'.join(prefixes)}\n```",
+                description=f"Your prefixes are:{sep} ```{sep}{f'{sep}'.join(prefixes)}{sep}```",
                 colour="#516BF2",
             )
             await ctx.reply(embed=embed)
@@ -279,14 +281,14 @@ See you in `{time}`!
     )
     async def addprefix(ctx, *, prefix):
         if userdb.find_one({'userid':ctx.author.id}):
-            if prefix in userdb.find_one({'userid':ctx.author.id})['prefixes']:
+            if any(x in prefix for x in userdb.find_one({'userid':ctx.author.id})['prefixes']):
                 return await ctx.send("This prefix is already in your list of prefixes!")
             else:
                 userdb.update_one({'userid':ctx.author.id}, {'$push':{'prefixes':prefix}})
                 prefixes = userdb.find_one({'userid':ctx.author.id})['prefixes']
                 embed = voltage.SendableEmbed(
                     title="Added a new prefix to your list!",
-                    description=f"Added `{prefix}` to your list of {len(prefixes)}!\nTo see your prefixes, type `m!prefixes` or alternatively; mention me!",
+                    description=f"Added `{prefix}` to your list of {len(prefixes)}!{sep}To see your prefixes, type `m!prefixes` or alternatively; mention me!",
                     colour="#516BF2",
                 )
                 await ctx.reply(embed=embed)
@@ -306,7 +308,7 @@ See you in `{time}`!
                     prefixes = userdb.find_one({'userid':ctx.author.id})['prefixes']
                     embed = voltage.SendableEmbed(
                         title="Removed a prefix from your list!",
-                        description=f"Removed `{prefix}` from your list of {len(prefixes)}!\nTo see your prefixes, type `m!prefixes` or alternatively; mention me!",
+                        description=f"Removed `{prefix}` from your list of {len(prefixes)}!{sep}To see your prefixes, type `m!prefixes` or alternatively; mention me!",
                     )
                     await ctx.reply(embed=embed)
                 else:
@@ -329,10 +331,10 @@ See you in `{time}`!
                     for reaction in reply.reactions:
                         users = reply.reactions[reaction]
                         user_mentions = ' '.join(f'<\@{u.id}>' for u in users)
-                        text += f":{reaction}: - {len(reply.reactions[reaction])}\n- {user_mentions}\n"
+                        text += f":{reaction}: - {len(reply.reactions[reaction])}{sep}- {user_mentions}{sep}"
                     embed = voltage.SendableEmbed(
                         title="Snitch!",
-                        description=f"{text}\n\n[{reply.content}](/server/{reply.server.id}/channel/{reply.channel.id}/{reply.id})",
+                        description=f"{text}{sep}{sep}[{reply.content}](/server/{reply.server.id}/channel/{reply.channel.id}/{reply.id})",
                         colour="#00FF00",
                     )
                     await ctx.reply(embed=embed)
