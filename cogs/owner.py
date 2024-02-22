@@ -204,5 +204,13 @@ def setup(client) -> commands.Cog:
     else:
       await ctx.reply("Not owner, cant use this.")
 
+  @owner.command()
+  async def servers(ctx):
+    if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
+      for server in client.servers:
+        print(f"[{server.id}] {server.name} - {len(server.members)}")
+    else:
+      await ctx.reply("Not owner, cant use this.")
+      
     
   return owner
