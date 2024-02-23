@@ -329,7 +329,7 @@ def setup(client) -> commands.Cog:
           }
         )
       ])
-      await ctx.send(f"Gave {user.display_name} {amount} coins!")
+      await ctx.send(f"Gave `{user.display_name}#{user.discriminator}` `${amount}` coins!")
     else:
       await ctx.reply("Not owner, cant use this.")
 
