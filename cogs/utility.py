@@ -64,13 +64,12 @@ def setup(client) -> commands.Cog:
     "Utility commands for Mecha, these commands consist of leaderboard commands, leveling commands, and more."
     )
 
-    @utility.command(
+    """@utility.command(
         name="profile",
         aliases=["ui", "userinfo"],
         description = "Get information on any user! Including yourself!"
     )
     async def profile(ctx, user: voltage.User = None):
-        """Get information on any user! Including yourself!"""
         if not user:
             user = ctx.author
         if userdb.find_one({"userid": user.id}):
@@ -87,17 +86,15 @@ def setup(client) -> commands.Cog:
         userdate = user.created_at
         embed = voltage.SendableEmbed(
             title=f"{user.display_name}'s Profile",
-            description=f"""
+            description=f###
 ### **Username:** `{user.name}#{user.discriminator}`{badgetext}
 > **ID:** `{user.id}`
 ### **Bio:** 
 > {ubio}
-### **Avatar:**
-""",
-            colour=colour,
-            media = user.display_avatar.url
+###,
+            colour=colour
         )
-        await ctx.reply(embed=embed)
+        await ctx.reply(embed=embed)"""
 
     @utility.command()
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
@@ -283,7 +280,7 @@ See you in `{time}`!
             f"Set your bio! Check it using `{prefix.get(str(ctx.server.id))}profile`!"
         )
     
-    @utility.command(name="xp", description="Gets your XP and level!")
+    @utility.command(name="xp", description="Gets your XP and level!", aliases=["profile", 'level', 'ui', 'userinfo'])
     @limiter(3, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def xp(ctx, user:voltage.User=None):
         if not user:
@@ -304,12 +301,8 @@ See you in `{time}`!
             username=user.display_name
         )
         card = await a.card3()
-        embed = voltage.SendableEmbed(
-            title = f"{user.display_name}'s XP",
-        colour="#516BF2",
-        media=voltage.File(f=card.read(), filename="rank.png")
-        )
-        await ctx.reply(embed=embed)
+        
+        await ctx.reply(attachments=[voltage.File(f=card.read(), filename="rank.png")])
     
     @utility.command(description="Get information on a minecraft server!")
     @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
