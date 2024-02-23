@@ -74,22 +74,6 @@ cooldowns = db['cooldowns']
 
 import time
 
-# USE THIS IF YOU NEED TO ADD NEW KEYS TO TH3,kE DATABASE
-for user in userdb.find():
-  if user['prefixes'] == []:
-    userdb.bulk_write(
-      [
-        pymongo.UpdateOne(
-          {'userid':user['userid']}, 
-          {
-            '$set':{
-              "prefixes": ["m!"]
-            }
-          }
-        )
-    ])
-    print(user['username'])
-
 def update_level(user:voltage.User):
   if userdb.find_one({'userid':user.id}):
     user_data = userdb.find_one({'userid':user.id})
@@ -229,6 +213,23 @@ client = commands.CommandsClient(prefix=get_prefix, help_command=HelpCommand)
 
 RBList = RBL.RevoltBots(ApiKey=config['RBL_KEY'], botId="01FZB4GBHDVYY6KT8JH4RBX4KR")
 
+# USE THIS IF YOU NEED TO ADD NEW KEYS TO THE DATABASE
+async def do():
+  for user in userdb.find():
+    ud = client.get_user(user['userid'])
+    userdb.bulk_write(
+      [
+        pymongo.UpdateOne(
+          {'userid':user['userid']}, 
+          {
+            '$set':{
+              "username": f"{ud.name}#{ud.discriminator}"
+            }
+          }
+        )
+    ])
+    print(user['username'])
+
 def post():
   """ POST Stats """
   res = requests.post(
@@ -355,7 +356,7 @@ async def ready():
   with open("json/data.json", "w") as r:
     json.dump(data, r, indent=2)
   print("Up and running") # Prints when the client is ready. You should know this
-  await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status(), stayon())
+  await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status(), stayon(), do())
 
 @client.command()
 @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))

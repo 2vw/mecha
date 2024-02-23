@@ -307,16 +307,28 @@ def setup(client) -> commands.Cog:
   @owner.command()
   async def give(ctx, user:voltage.User, amount:int):
     if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
-      userdb.update_one(
-        {
-          "userid": user.id
-        },
-        {
-          "$inc": {
-            "coins": amount
+      userdb.bulk_write([
+        pymongo.UpdateOne(
+          {
+            "userid": user.id
+          },
+          {
+            "$inc": {
+              "economy.bank": amount
+            }
           }
-        }
-      )
+        ),
+        pymongo.UpdateOne(
+          {
+            "userid": user.id
+          },
+          {
+            "$push": {
+              "notifications.inbox": f"You've recieved {amount} coins as per compensation for being affected by a bug! Use `m!balance` to check your balance."
+            }
+          }
+        )
+      ])
       await ctx.send(f"Gave {user.display_name} {amount} coins!")
     else:
       await ctx.reply("Not owner, cant use this.")
