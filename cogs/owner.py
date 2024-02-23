@@ -280,4 +280,46 @@ def setup(client) -> commands.Cog:
     else:
       await ctx.reply("Not owner, cant use this.")
     
+  @owner.command()
+  async def removebadge(ctx, user:voltage.User, badge:int=None):
+    if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
+      if not badge:
+        embed = voltage.SendableEmbed(
+          title="Remove Badge",
+          description="Please specify a badge number!\nFor example: `m!removebadge @user 1`\nBadge List:\n```\n1 - Developer\n2 - Admin\n3 - Moderator\n4 - Bug Hunter\n5 - Beta Tester",
+        )
+        await ctx.send(embed=embed)
+      elif get_badge(badge):
+        userdb.update_one(
+          {
+            "userid": user.id
+          },
+          {
+            "$set": {
+              f"status.{get_badge(badge)}": False
+            }
+          }
+        )
+        await ctx.send(f"Removed badge {badge} from {user.display_name}!")
+    else:
+      await ctx.reply("Not owner, cant use this.")
+    
+  @owner.command()
+  async def give(ctx, user:voltage.User, amount:int):
+    if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
+      userdb.update_one(
+        {
+          "userid": user.id
+        },
+        {
+          "$inc": {
+            "coins": amount
+          }
+        }
+      )
+      await ctx.send(f"Gave {user.display_name} {amount} coins!")
+    else:
+      await ctx.reply("Not owner, cant use this.")
+
+    
   return owner

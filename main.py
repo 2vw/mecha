@@ -74,31 +74,21 @@ cooldowns = db['cooldowns']
 
 import time
 
-# USE THIS IF YOU NEED TO ADD NEW KEYS TO THE DATABASE
-"""for user in userdb.find():   
-  userdb.bulk_write(
-    [
-      pymongo.UpdateOne(
-        {'userid':user['userid']}, 
-        {
-          '$set':{
-            "status": {
-            "developer": False,
-            "admin": False,
-            "moderator": False,
-            "friend": False,
-            "premium": False,
-            "bug": False,
-            "beta": False,
-            "familyfriendly": False,
-            "isBot": False,
-            "banned": False
+# USE THIS IF YOU NEED TO ADD NEW KEYS TO TH3,kE DATABASE
+for user in userdb.find():
+  if user['prefixes'] == []:
+    userdb.bulk_write(
+      [
+        pymongo.UpdateOne(
+          {'userid':user['userid']}, 
+          {
+            '$set':{
+              "prefixes": ["m!"]
+            }
           }
-          }
-        }
-      )
-  ])
-  print(user['username'])"""
+        )
+    ])
+    print(user['username'])
 
 def update_level(user:voltage.User):
   if userdb.find_one({'userid':user.id}):
@@ -145,7 +135,7 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
             "totalxp": 0,
             "lastmessage": time.time()
         },
-        "prefixes": [],
+        "prefixes": ["m!"],
         "economy": {
             "wallet": 0,
             "bank": 0,
@@ -463,8 +453,10 @@ async def server_added(message):
   await channel.send(content="[]()", embed=embed)
 
 @client.command(name="add", description="Adds you to the database!") # whos really using this command? Like really, move this to owner.py when pls..
-async def add(ctx):
-  result = add_user(ctx.author)
+async def add(ctx, user:voltage.User=None):
+  if user is None:
+    user = ctx.author
+  result = add_user(user)
   await ctx.reply(f"Results are in! {result}")
 
 errormsg = [
