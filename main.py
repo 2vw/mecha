@@ -21,7 +21,7 @@ onRoleDelete : "server_role_delete"
 onUserEdit : "user_update"
 '''
 
-import random, pymongo, json, time, asyncio, datetime, requests
+import random, pymongo, json, time, asyncio, datetime, requests, pilcord
 import voltage, os
 from voltage.ext import commands
 from voltage.errors import CommandNotFound, NotBotOwner, NotEnoughArgs, NotEnoughPerms, NotFoundException, BotNotEnoughPerms, RoleNotFound, UserNotFound, MemberNotFound, ChannelNotFound, HTTPError 
@@ -75,14 +75,25 @@ cooldowns = db['cooldowns']
 import time
 
 # USE THIS IF YOU NEED TO ADD NEW KEYS TO THE DATABASE
-"""for user in userdb.find():
+"""for user in userdb.find():   
   userdb.bulk_write(
     [
       pymongo.UpdateOne(
         {'userid':user['userid']}, 
         {
           '$set':{
-            "levels.lastmessage": time.time()
+            "status": {
+            "developer": False,
+            "admin": False,
+            "moderator": False,
+            "friend": False,
+            "premium": False,
+            "bug": False,
+            "beta": False,
+            "familyfriendly": False,
+            "isBot": False,
+            "banned": False
+          }
           }
         }
       )
@@ -95,7 +106,7 @@ def update_level(user:voltage.User):
     lvl = user_data['levels']['level']
     xp = user_data['levels']['xp']
     if 0 >= (5 * (lvl ^ 2) + (50 * lvl) + 100 - xp):
-      amt = random.randint(0, 100)
+      amt = random.randint(0, 10000)
       userdb.bulk_write([
         pymongo.UpdateOne({'userid':user.id}, {'$inc':{'levels.level':1}}),
         pymongo.UpdateOne({'userid':user.id}, {'$set':{'levels.xp':0}}),
@@ -155,10 +166,14 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
             }
         },
         "status": {
+            "developer": False,
+            "admin": False,
+            "moderator": False,
+            "friend": False,
+            "premium": False,
+            "bug": False,
             "beta": False,
             "familyfriendly": False,
-            "premium": False,
-            "admin": False,
             "isBot": isbot,
             "banned": False
         }
@@ -434,8 +449,8 @@ async def on_message(message):
       )
       await message.reply(embed=embed)
     else:
-      add_user(message.author)
-  await client.handle_commands(message) # so everything else doesnt trip over its clumsy ass selves.
+      return print(add_user(message.author))
+  await client.handle_commands(message) # so everything else doesnt trip over its clumsy ass selves."
 
 @client.listen("server_added")
 async def server_added(message):
@@ -479,7 +494,7 @@ async def on_message_error(error: Exception, message):
   elif isinstance(error, NotEnoughArgs):
     embed = voltage.SendableEmbed(
       title=random.choice(errormsg),
-      description="YOU'RE MISSING ARGS!",
+      description="YOU'RE MISSING ARGS!\n{}".format(error),
       colour="#516BF2"
     )
     return await message.reply(message.author.mention, embed=embed)

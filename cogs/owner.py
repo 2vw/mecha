@@ -1,4 +1,4 @@
-import voltage, asyncio, random, time, psutil, pymongo, json, datetime, io, contextlib, requests, string, os, sys
+import voltage, asyncio, random, time, psutil, pymongo, json, datetime, io, contextlib, requests, string, os, sys, pilcord
 from bson.son import SON
 from voltage.ext import commands
 from pymongo.mongo_client import MongoClient
@@ -212,5 +212,72 @@ def setup(client) -> commands.Cog:
     else:
       await ctx.reply("Not owner, cant use this.")
       
+    
+  @owner.command()
+  async def apu(ctx, user:voltage.User, *, prefix:str):
+    if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
+      userdb.update_one({
+        "userid": user.id
+      }, {
+        "$push": {
+          "prefixes": prefix
+        }
+      })
+      await ctx.send(f"Added {prefix}, to {user.display_name}'s prefix list!")
+    else:
+      await ctx.reply("Not owner, cant use this.")
+  
+  @owner.command()
+  async def dpu(ctx, user:voltage.User, *, prefix:str):
+    if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
+      userdb.update_one({
+        "userid": user.id
+      }, {
+        "$pull": {
+          "prefixes": prefix
+        }
+      })
+      await ctx.send(f"Removed {prefix}, from {user.display_name}'s prefix list!")
+    else:
+      await ctx.reply("Not owner, cant use this.")
+  
+  def get_badge(badge):
+    if badge == 1:
+      return "dev"
+    elif badge == 2:
+      return "admin"
+    elif badge == 3:
+      return "mod"
+    elif badge == 4:
+      return "bug"
+    elif badge == 5:
+      return "beta"
+    else:
+      return None
+  
+  @owner.command()
+  async def addbadge(ctx, user:voltage.User, badge:int=None):
+    if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
+      if not badge:
+        embed = voltage.SendableEmbed(
+          title="Add Badge",
+          description="Please specify a badge number!\nFor example: `m!addbadge @user 1`\nBadge List:\n```\n1 - Developer\n2 - Admin\n3 - Moderator\n4 - Bug Hunter\n5 - Beta Tester",
+          colour="#FF0000"
+        )
+        return await ctx.send(embed=embed)
+      elif get_badge(badge):
+        userdb.update_one(
+          {
+            "userid": user.id
+          },
+          {
+            "$set": {
+              f"status.{get_badge(badge)}": True
+            }
+          }
+        )
+        await ctx.send(f"Added badge {badge} to {user.display_name}!")
+    else:
+      await ctx.reply("Not owner, cant use this.")
     
   return owner

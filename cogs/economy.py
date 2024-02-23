@@ -44,7 +44,6 @@ joblist = [
     "Wizard of Light Bulb Moments",
     "Underwater Basket Weaver",
     "Pet Psychic",
-    "Chief Happiness Officer",
     "Digital Overlord",
     "Head Cheese Maker",
     "Rogue Pizza Taster",
@@ -143,16 +142,26 @@ async def apply_job(ctx, job:str):
     if userdb.find_one({"userid": ctx.author.id}):
         userdata = userdb.find_one({"userid": ctx.author.id})
         if "resume" in userdata['economy']['data']['inventory']:
+            jobname = match_job_to_short_form(job.lower(), short_forms, joblist)
             if random.randint(1, 100) < 75:
-                jobname = match_job_to_short_form(job, short_forms, joblist)
                 userdb.update_one({"userid": ctx.author.id}, {"$set": {"economy.data.job": jobname}})
-                return await ctx.reply(f"You applied for **{jobname.capitalize()}** and were accepted!")
+                embed = voltage.SendableEmbed(
+                    title="Application Accepted",
+                    description=f"You were accepted for **{jobname.capitalize()}**!",
+                    colour="#FF033E"
+                )
+                return await ctx.reply(embed=embed)
             else:
                 userdb.bulk_write([
                     pymongo.UpdateOne({"userid": ctx.author.id}, {"$set": {"economy.data.job": "unemployed"}}),
                     pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": 250}})
                 ])
-                return await ctx.reply(f"You applied for **{job.capitalize()}** and were rejected! You've been compensated with `250` coins! (If you previously had a job you were fired!)")
+                embed = voltage.SendableEmbed(
+                    title="Application Rejected",
+                    description=f"### :01HQ9JZ0Q1FMAKF6Y4Z2TZ58ZG:{sep}You were rejected for **{jobname.capitalize()}**{sep}You have received `250` coins as compensation!{sep}You are now unemployed..",
+                    colour="#FF033E"
+                )
+                return await ctx.reply(embed=embed)
         else:
             return await ctx.reply("You don't have a resume to apply for a job with! Purchase a resume for `250` coins by using `m!buy resume`")
     else:
@@ -600,7 +609,7 @@ def setup(client) -> commands.Cog:
     @eco.command(description="Pay another user from your wallet!", name="pay", aliases=['transfer', 'sendmoney'])
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def pay(ctx, member: voltage.Member, amount:int):
-        if not str(amount).isinstance(int):
+        if not str(amount).isdigit():
             return await ctx.reply("Please enter a valid amount!")
         if amount <= 0:
             embed = voltage.SendableEmbed(
