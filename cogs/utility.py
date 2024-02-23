@@ -15,7 +15,7 @@ settings = pilcord.CardSettings(
     background="assets/background.jpg"
 )
 
-# FIXME: DEAR GOD WHAT THE FUCK IS THIS SHIT
+# Fixed :)
 async def get_badges(badges, user:voltage.User):
     """
     Outputs a sorted array of badge names
@@ -25,7 +25,6 @@ async def get_badges(badges, user:voltage.User):
         data = json.load(f)
         
     for badge in badges:
-        print(badge)
         if badge.lower() in data:
             if userdb.find_one({"userid": user.id})['status'][badge.lower()]:
                 badgeslist.append(f":{data.get(badge)}:")
