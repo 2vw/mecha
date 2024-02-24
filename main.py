@@ -21,6 +21,19 @@ onRoleDelete : "server_role_delete"
 onUserEdit : "user_update"
 '''
 
+"""
+token="sessionToken"
+name="test"
+colour="linear-gradient(30deg, #fe0000 0%, #ff8400 13%, #fffc00 24%, #2fe600 37%, #00c2c0 47%, #0030a5 62%, #73005b 78%)" # the gradient should only contain hex colors
+roleid="01GBN6G274YFR7KKF7KH90608R"
+serverid="01G6XTX40P5B9V0MF25Z1Q9VC6"
+hoist="false"
+rank="1"
+#curl -X PATCH -H "X-Session-Token: $token" -d "{ \"name\": \"$name\", \"rank\": $rank, \"hoist\": $hoist, \"id:\": \"$roleid\", \"colour\": \"$colour\" }" https://api.revolt.chat/servers/$serverid/roles/$roleid
+curl -X PATCH -H "X-Session-Token: $token" -d "{ \"id:\": \"$roleid\", \"colour\": \"$colour\" }" https://api.revolt.chat/servers/$serverid/roles/$roleid
+
+"""
+
 import random, pymongo, json, time, asyncio, datetime, requests, pilcord
 import voltage, os
 from voltage.ext import commands
@@ -68,22 +81,37 @@ class HelpCommand(commands.HelpCommand):
  
 async def serverupdate():
   for server in client.servers:
-    try:
+    i = 0
+    for _ in serverdb.find({}):
+      i += 1
+    if not serverdb.find_one({"serverid": server.id}):
+      if server.icon:
+        icon = server.icon.url
+      else:
+        icon = None
+      if server.banner:
+        banner = server.banner.url
+      else:
+        banner = None
+      if server.description:
+        description = server.description
+      else:
+        description = None
       serverdb.insert_one(
         {
-          "_id": serverdb.count_documents({}) + 1,
-          "id": server.id,
+          "_id": i,
+          "serverid": server.id,
           "name": server.name,
           "owner": {
             "id": server.owner.id,
             "name": server.owner.name,
             "discriminator": server.owner.discriminator
           },
-          "created_at": server.created_at,
+          "created_at": f"{server.created_at}",
           "meta": {
-            "description": server.description,
-            "banner": server.banner.url,
-            "icon": server.icon.url,
+            "description": description,
+            "banner": banner,
+            "icon": icon,
           },
           "member_count": len(server.members),
           "role_count": len(server.roles),
@@ -91,9 +119,6 @@ async def serverupdate():
           "category_count": len(server.categories)
         }
       )
-    except Exception as e:
-      print(e)
-      pass
   print("Updated {} servers!".format(serverdb.count_documents({})))
       
 db = DBclient['beta']
@@ -383,7 +408,7 @@ async def ready():
   with open("json/data.json", "w") as r:
     json.dump(data, r, indent=2)
   print("Up and running") # Prints when the client is ready. You should know this
-  await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status(), stayon(), do(), serverupdate())
+  await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status(), stayon(), do())
 
 @client.command()
 @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
