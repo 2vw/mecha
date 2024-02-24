@@ -415,8 +415,10 @@ def setup(client) -> commands.Cog:
                     lb.append(f"{'#' * count} **{emoji[count]}** {doc['username']}{sep}#### **${total:,}**")
                 elif len(doc['username']) > 10 and count == 1:
                     lb.append(f"{'###' * count} **{emoji[count]}** {doc['username']}{sep}#### **${total:,}**")
+                elif count == 3 and len(doc['username']) < 20:
+                    lb.append(f"{'#' * count} **{emoji[count]}** {doc['username']}{sep}#### **${total:,}**")
                 else:
-                    lb.append(f"{'##' * count} **{emoji[count]}** {doc['username']}{sep}#### **${total:,}**")
+                    lb.append(f"{'#' * count + '#'} **{emoji[count]}** {doc['username']}{sep}#### **${total:,}**")
             elif count == 4:
                 lb.append(f"**#4** -> {doc['username']}: {total:,}")
             else:
