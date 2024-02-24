@@ -148,7 +148,7 @@ async def apply_job(ctx, job:str):
                 embed = voltage.SendableEmbed(
                     title="Application Accepted",
                     description=f"You were accepted for **{jobname.capitalize()}**!",
-                    colour="#FF033E"
+                    colour="#198754"
                 )
                 return await ctx.reply(embed=embed)
             else:

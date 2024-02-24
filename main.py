@@ -71,7 +71,7 @@ async def serverupdate():
     try:
       serverdb.insert_one(
         {
-          "_id": serverdb.count_documents() + 1,
+          "_id": serverdb.count_documents({}) + 1,
           "id": server.id,
           "name": server.name,
           "owner": {
@@ -91,7 +91,8 @@ async def serverupdate():
           "category_count": len(server.categories)
         }
       )
-    except:
+    except Exception as e:
+      print(e)
       pass
   print("Updated {} servers!".format(serverdb.count_documents({})))
       
