@@ -65,6 +65,35 @@ class HelpCommand(commands.HelpCommand):
     if embed.description:
       embed.description += text
     return await ctx.reply(embed=embed)
+ 
+async def serverupdate():
+  for server in client.servers:
+    try:
+      serverdb.insert_one(
+        {
+          "_id": serverdb.count_documents() + 1,
+          "id": server.id,
+          "name": server.name,
+          "owner": {
+            "id": server.owner.id,
+            "name": server.owner.name,
+            "discriminator": server.owner.discriminator
+          },
+          "created_at": server.created_at,
+          "meta": {
+            "description": server.description,
+            "banner": server.banner.url,
+            "icon": server.icon.url,
+          },
+          "member_count": len(server.members),
+          "role_count": len(server.roles),
+          "channel_count": len(server.channel_ids),
+          "category_count": len(server.categories)
+        }
+      )
+    except:
+      pass
+  print("Updated {} servers!".format(serverdb.count_documents()))
       
 db = DBclient['beta']
 userdb = db['users']
@@ -353,7 +382,7 @@ async def ready():
   with open("json/data.json", "w") as r:
     json.dump(data, r, indent=2)
   print("Up and running") # Prints when the client is ready. You should know this
-  await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status(), stayon(), do())
+  await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status(), stayon(), do(), serverupdate())
 
 @client.command()
 @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
