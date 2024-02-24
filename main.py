@@ -93,7 +93,7 @@ async def serverupdate():
       )
     except:
       pass
-  print("Updated {} servers!".format(serverdb.count_documents()))
+  print("Updated {} servers!".format(serverdb.count_documents({})))
       
 db = DBclient['beta']
 userdb = db['users']
