@@ -10,7 +10,7 @@ def setup(client) -> commands.Cog:
   @fun.command(
     description="Are you gay or no?",
     aliases=["howgay", "gay", "amigay", "gaypercent", "gayamount"],
-    name="GayRate"
+    name="gayrate"
   )
   async def gayrate(ctx, member: voltage.Member = None):
     if member is None:
