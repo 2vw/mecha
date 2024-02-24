@@ -105,12 +105,9 @@ def check_xp(user: voltage.User):
 def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function to add users to the database if they dont exist yet. but it works..
   if userdb.find_one({"userid": user.id}):
     return "User already exists."
-  id = 1
-  for i in userdb.find({}):
-    id += 1
   try:
     userdb.insert_one({
-        "_id": id,
+        "_id": len(userdb.count_documents ({})) + 1,
         "username": user.name,
         "userid": user.id,
         "levels": {
@@ -228,7 +225,7 @@ async def do():
           }
         )
     ])
-    print(user['username'])
+  print(f"Updated {userdb.count_documents({})} users!")
 
 def post():
   """ POST Stats """
