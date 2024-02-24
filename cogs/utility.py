@@ -264,21 +264,22 @@ See you in `{time}`!
         description="Set your bio"
     )
     async def bio(ctx, *, bio: str):
-        if len(bio) > 250:
-            return await ctx.send(
-                "Your bio is too looooooooooooooooooooooooooong! Make sure its under 250 characters!"
+        if userdb.find_one({"userid": ctx.author.id}):
+            if len(bio) > 250:
+                return await ctx.send(
+                    "Your bio is too looooooooooooooooooooooooooong! Make sure its under 250 characters!"
+                )
+            userdb.update_one(
+                {"userid": ctx.author.id},
+                {"$set": {"bio": bio}}
             )
-        retur = re.sub("'", "", bio)
-        with open("json/users.json", "r") as f:
-            bios = json.load(f)
-        with open("prefixes.json", "r") as f:
-            prefix = json.load(f)
-        with open("json/users.json", "w") as f:
-            bios[str(ctx.author.id)]["bio"] = str(retur)
-            json.dump(bios, f, indent=2)
-        await ctx.send(
-            f"Set your bio! Check it using `{prefix.get(str(ctx.server.id))}profile`!"
-        )
+            await ctx.send(
+                f"Set your bio to `{bio}`!"
+            )
+        else:
+            return await ctx.send(
+                "You need to create an account first!"
+            )
     
     @utility.command(name="xp", description="Gets your XP and level!", aliases=["profile", 'level', 'ui', 'userinfo'])
     @limiter(3, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
