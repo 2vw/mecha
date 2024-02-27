@@ -324,12 +324,12 @@ def setup(client) -> commands.Cog:
           },
           {
             "$push": {
-              "notifications.inbox": f"You've recieved {amount} coins as per compensation for being affected by a bug! Use `m!balance` to check your balance."
+              "notifications.inbox": f"You've recieved {amount:,} coins as per compensation for being affected by a bug! Use `m!balance` to check your balance."
             }
           }
         )
       ])
-      await ctx.send(f"Gave `{user.display_name}#{user.discriminator}` `${amount}` coins!")
+      await ctx.send(f"Gave `{user.display_name}#{user.discriminator}` `${amount:,}` coins!")
     else:
       await ctx.reply("Not owner, cant use this.")
 

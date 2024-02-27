@@ -178,7 +178,7 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
             "total": 0,
             "data": {
                 "inventory": {
-                    "bank_loan": 1
+                    "Bank Loan": 1
                 },
                 "job": "unemployed"
             },
@@ -370,9 +370,11 @@ async def status():
       f"Watching {len(client.members)} users!",
       f"My waifu is better than yours!!! | {len(client.cache.servers)} servers",
       f"Lea | {len(client.cache.servers)} servers",
+      f"Hey everyone! | {len(client.cache.servers)} servers",
+      f"I am a bot | {len(client.cache.servers)} servers",
+      f"Please stop asking to see my feet | {len(client.cache.servers)} servers",
       f"guys my father just came back with the milk O_O - delta2571 | {len(client.cache.servers)} servers",
       f"Revolt > shitcord | {len(client.cache.servers)} servers",
-      f"Lea's Onlyfans: onlyfans.com/linustechtips | {len(client.cache.servers)} servers",
       f"William Says HI! | {len(client.cache.servers)} servers",
       f"Playing the numbers game | {len(client.cache.servers)} servers",
       f"Spreading joy across {len(client.members)} users!",
@@ -380,7 +382,10 @@ async def status():
       f"Chillin' with {len(client.members)} users!",
       f"Your friendly bot | {len(client.cache.servers)} servers | {len(client.members)} users",
       f"Beep boop! I'm a bot | {len(client.cache.servers)} servers",
-      f"Try 'm!help' to get started | In {len(client.cache.servers)} servers"
+      f"Try 'm!help' to get started | {len(client.cache.servers)} servers",
+      f"ccccccuthdkhugjktlcfvrhvtrdkgrfcikeekdvtfdrn | {len(client.cache.servers)} servers",
+      f"Gaming rn, talk later? | {len(client.cache.servers)} servers",
+      f"saul goodman | {len(client.cache.servers)} servers",
       ]
     status = random.choice(statuses)
     await client.set_status(status, voltage.PresenceType.online)
@@ -471,7 +476,6 @@ async def levelstuff(message):
   else:
     return add_user(message)
 
-# this shit is so fucking weird but hey, it works
 # Thank TheBobBobs, bro is a fucking goat for this.
 @client.listen("message")
 async def on_message(message):
@@ -522,7 +526,6 @@ errormsg = [
   "What happened? I know!",
   "404!",
   "ERROR.. ERROR..",
-  "Error Occured!",
   "An Error Occured!"
 ]
 

@@ -105,7 +105,7 @@ span {
     background-color: #363636;
     color: white;
     text-align: center;
- }
+}
 
 .nav {
     background-color: transparent;
@@ -133,6 +133,11 @@ span {
 .nav a.active {
     background-color: #4c6faf;
     color: white;
+    transition: all cubic-bezier(0.645, 0.045, 0.355, 1) .5s;
+}
+
+.nav a.active:hover {
+    background-color: #564caf;
 }
 
 .nav-links {

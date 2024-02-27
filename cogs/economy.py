@@ -484,7 +484,7 @@ def setup(client) -> commands.Cog:
     @eco.command(name="blackjack", aliases=["bj"], description="Play a game of blackjack!")
     @limiter(7, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def blackjack(ctx, bet:int=None):
-        if not bet or not bet.is_integer() or bet < 0:
+        if not bet or not str(bet).is_integer() or bet < 0:
             return await ctx.reply("Please enter a valid bet!")
         elif bet > userdb.find_one({"userid": ctx.author.id})["economy"]["wallet"]:
             embed = voltage.SendableEmbed(
