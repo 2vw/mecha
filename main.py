@@ -389,7 +389,7 @@ async def status():
       ]
     status = random.choice(statuses)
     await client.set_status(status, voltage.PresenceType.online)
-    await asyncio.sleep(5)
+    await asyncio.sleep(60)
 
 async def stayon():
   i = 0
