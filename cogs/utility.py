@@ -99,13 +99,13 @@ def setup(client) -> commands.Cog:
     @utility.command()
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def stats(ctx):
-        """Different from normal stats, the normal one shows the stats of the bot, this one shows complex stats. Like CPU usage and whatnot."""
+        """Get some statistics up in here!"""
+        with open("json/data.json", "r") as f:
+            uptime = json.load(f)['uptime']
         elapsed_time = int(time.time() - uptime)
         days, remainder = divmod(elapsed_time, 86400)
         hours, remainder = divmod(remainder, 3600)
         minutes, seconds = divmod(remainder, 60)
-        with open("json/data.json", "r") as f:
-            uptime = json.load(f)['uptime']
         embed = voltage.SendableEmbed(
         title=f"{client.user.name}'s Stats",
         description=f"""
