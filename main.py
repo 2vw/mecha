@@ -597,4 +597,4 @@ for filename in os.listdir("./cogs"):
       print(e)
 
 alive() #yeah blah blah stolen from old Mecha but hey, it works so why not copy and paste it, we're developers.
-client.run(config['TOKEN']) # Replace with your token in config, config.json to be exact, for everyone else, you know what this does stop fucking stalling pls :).
+client.run(config['TOKEN'], bot=True, banner=False) # Replace with your token in config, config.json to be exact, for everyone else, you know what this does stop fucking stalling pls :).

@@ -88,7 +88,7 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
             "totalxp": 0,
             "lastmessage": time.time()
         },
-        "prefixes": [],
+        "prefixes": ["m!"],
         "economy": {
             "wallet": 0,
             "bank": 0,
@@ -480,6 +480,43 @@ def setup(client) -> commands.Cog:
                 await ctx.reply(embed=embed)
         else:
             await create_account(ctx)
+    
+    # GAMBA GAMBA GAMBA
+    
+    @eco.command(name="coinflip", aliased=['cf', 'coin', 'flip'], description="Flip a coin!")
+    @limiter(7, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
+    async def coinflip(ctx, bet:int=None, choice:str=None):
+        if not bet or not str(bet).is_integer() or bet < 0:
+            return await ctx.reply("Please enter a valid bet!")
+        else:
+            bet = int(bet)
+        if not choice:
+            return await ctx.reply("Please enter heads or tails!")
+        elif choice.lower() not in ['heads', 'tails']:
+            return await ctx.reply("Please enter heads or tails!")
+        elif bet > userdb.find_one({"userid": ctx.author.id})["economy"]["wallet"]:
+            embed = voltage.SendableEmbed(
+                title=ctx.author.display_name,
+                icon_url=ctx.author.display_avatar.url,
+                description=f"You don't have that much money in your wallet!{sep}*(lol poor fella)*",
+                colour="#FF0000"
+            )
+            return await ctx.reply(embed=embed)
+        elif userdb.find_one({"userid": ctx.author.id}):
+            userdb.bulk_write([
+                pymongo.UpdateOne(
+                    {"userid": ctx.author.id},
+                    {"$inc": {"economy.wallet": -bet}}
+                )
+            ])
+            if random.choice(['heads', 'tails']) == choice.lower():
+                embed = voltage.SendableEmbed(
+                    title=ctx.author.display_name,
+                    icon_url=ctx.author.display_avatar.url,
+                    description=f"You won **${bet:,}**! {sep}You now have `${userdb.find_one({'userid': ctx.author.id})['economy']['wallet']:,}` in your wallet!",
+                    colour="#00FF00"
+                )
+                return await ctx.reply(embed=embed)
     
     @eco.command(name="blackjack", aliases=["bj"], description="Play a game of blackjack!")
     @limiter(7, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
