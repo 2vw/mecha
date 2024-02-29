@@ -156,12 +156,25 @@ def update_level(user:voltage.User):
     xp = user_data['levels']['xp']
     if 0 >= (5 * (lvl ^ 2) + (50 * lvl) + 100 - xp):
       amt = random.randint(0, 10000)
+      o = 1
+      for i in user_data['notifications']['inbox']:
+        o += 1
       userdb.bulk_write([
         pymongo.UpdateOne({'userid':user.id}, {'$inc':{'levels.level':1}}),
         pymongo.UpdateOne({'userid':user.id}, {'$set':{'levels.xp':0}}),
         pymongo.UpdateOne({'userid':user.id}, {'$inc':{'levels.totalxp':xp}}),
         pymongo.UpdateOne({'userid':user.id}, {'$inc':{'economy.bank':100 * lvl + amt}}),
-        pymongo.UpdateOne({'userid':user.id}, {'$push':{'notifications.inbox':f"Congratulations on leveling up to level {lvl+1}!{sep}You've recieved {100 * lvl + amt} coins as a reward!"}}),
+        pymongo.UpdateOne({'userid':user.id}, {
+          '$set':{
+            f'notifications.inbox.{i}':{
+              "message":f"Congratulations on leveling up to level {lvl+1}!{sep}You've recieved {100 * lvl + amt} coins as a reward!",
+              "date":time.time(),
+              "title":"Level Up!",
+              "type":"level",
+              "read":False
+              }
+            }
+          }),
       ])
       return True
     else:
