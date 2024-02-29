@@ -522,7 +522,7 @@ See you in `{time}`!
         if len(user_notifications) == 0:
             description = "No notifications found. 😭"
         else:
-            description = ""
+            description = "# Your Inbox\n"
             for notification in user_notifications:
                 if i == notifications_per_page:
                     break
@@ -531,7 +531,7 @@ See you in `{time}`!
                 days, remainder = divmod(elapsed_time, 86400)
                 hours, remainder = divmod(remainder, 3600)
                 minutes, seconds = divmod(remainder, 60)
-                description += f"{str(days)+'d ' if days > 0 else ''}{str(hours) + 'h ' if hours > 0 else ''}{str(minutes) + 'm ' if minutes > 0 else ''}{seconds}s ago • {user_notifications[notification]['message']}\n\n"
+                description += f"\n{str(days)+'d ' if days > 0 else ''}{str(hours) + 'h ' if hours > 0 else ''}{str(minutes) + 'm ' if minutes > 0 else ''}{seconds}s ago • {user_notifications[notification]['message']}\n"
 
         embed = voltage.SendableEmbed(
             title=f"Inbox for {ctx.author.display_name}", 
