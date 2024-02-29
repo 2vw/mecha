@@ -250,15 +250,13 @@ def get_user(user: voltage.User):
   else:
     return "User not found."  
  
-def give_xp(user: voltage.User, xp:int):   
-  userdb.update_one(
-      {"userid":user.id},
-      {
-          "$inc": {
-          "levels.xp": xp
-          }
-      }
-  )
+def give_xp(user: voltage.User, xp:int):
+  userdb.bulk_write([
+    pymongo.UpdateOne(
+      {"userid": user.id},
+      {"$inc": {"levels.xp": xp}}
+    )
+  ])
 
 prefixes = ["m!"]
 client = commands.CommandsClient(prefix=get_prefix, help_command=HelpCommand)
@@ -437,10 +435,7 @@ async def oldlevelstuff(message): # running this in the on_message event drops t
     {"userid":message.author.id}
   ): #super fucking stupid but it makes pylance happy
     update_level(message.author)
-    if random.randint(25, 100) <= 75: # 75% chance to get xp off a message, im too lazy to input my own rate limit fuck that
-      give_xp(message.author, random.randint(1, 5))
-    elif message.content.startswith("m!") and random.randint(1,10) == 1: # good boy points if you use commands and a 10% chance to receive xp (will have to replace this later when custom prefixing is implemented)
-      give_xp(message.author)
+    give_xp(message.author, random.randint(1, 5))
   else: 
     print(add_user(message))
 
@@ -456,12 +451,12 @@ async def levelstuff(message):
       )
       await channel.send(embed=embed) # praise kink? its whatever
     except KeyError:
-      print("keyerror :(") # this should never happen, if it does, tell William, if it doesnt, tell William anyways.
+      print("LEVEL CHANNEL ISNT DEFINED OR USER DOESNT EXIST") # this should never happen, if it does, tell William, if it doesnt, tell William anyways.
   elif userdb.find_one(
     {"userid":message.author.id}
   ):
-    if userdb.find_one({"userid":message.author.id})['levels']['lastmessage'] <= int(time.time()):
-      give_xp(message.author, 1)
+    if userdb.find_one({"userid":message.author.id})['levels']['lastmessage'] < time.time():
+      give_xp(message.author, random.randint(1,2))
       update_level(message.author)
       userdb.update_one(
         {"userid":message.author.id},

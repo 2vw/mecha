@@ -483,10 +483,10 @@ def setup(client) -> commands.Cog:
     
     # GAMBA GAMBA GAMBA
     
-    @eco.command(name="coinflip", aliased=['cf', 'coin', 'flip'], description="Flip a coin!")
+    @eco.command(name="coinflip", aliases=['cf', 'coin', 'flip'], description="Flip a coin!")
     @limiter(7, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def coinflip(ctx, bet:int=None, choice:str=None):
-        if not bet or not str(bet).is_integer() or bet < 0:
+        if not bet or bet < 0:
             return await ctx.reply("Please enter a valid bet!")
         else:
             bet = int(bet)
@@ -513,7 +513,7 @@ def setup(client) -> commands.Cog:
                 embed = voltage.SendableEmbed(
                     title=ctx.author.display_name,
                     icon_url=ctx.author.display_avatar.url,
-                    description=f"You won **${bet:,}**! {sep}You now have `${userdb.find_one({'userid': ctx.author.id})['economy']['wallet']:,}` in your wallet!",
+                    description=f"You won **{bet:,}**! {sep}You now have `{userdb.find_one({'userid': ctx.author.id})['economy']['wallet']:,}` in your wallet!",
                     colour="#00FF00"
                 )
                 return await ctx.reply(embed=embed)
