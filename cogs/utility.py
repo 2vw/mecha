@@ -510,4 +510,34 @@ See you in `{time}`!
             )
             await ctx.reply(embed=embed)
     
+    @utility.command(name="inbox", description="View your inbox!")
+    async def inbox(ctx, page: int = 1):
+        notifications_per_page = 5
+        skipped_notifications = (page - 1) * notifications_per_page
+        i = 0 + skipped_notifications
+        user_notifications = userdb.find_one(
+            {'userid': ctx.author.id}
+        )['notifications']['inbox']
+
+        if len(user_notifications) == 0:
+            description = "No notifications found. 😭"
+        else:
+            description = ""
+            for notification in user_notifications:
+                if i == notifications_per_page:
+                    break
+                i += 1
+                elapsed_time = int(time.time() - user_notifications[notification]['date'])
+                days, remainder = divmod(elapsed_time, 86400)
+                hours, remainder = divmod(remainder, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                description += f"{str(days)+'d ' if days > 0 else ''}{str(hours) + 'h ' if hours > 0 else ''}{str(minutes) + 'm ' if minutes > 0 else ''}{seconds}s ago • {user_notifications[notification]['message']}\n\n"
+
+        embed = voltage.SendableEmbed(
+            title=f"Inbox for {ctx.author.display_name}", 
+            description=description,
+            colour="#00FF00"
+        )
+        await ctx.send(embed=embed)
+    
     return utility

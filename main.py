@@ -129,6 +129,26 @@ cooldowns = db['cooldowns']
 
 import time
 
+"""for i in userdb.find({}):
+  userdb.bulk_write(
+    [
+      pymongo.UpdateOne(
+        {'userid':i['userid']}, 
+        {'$set':{'notifications.inbox': {
+          "1":{
+            "message": f"Welcome to Mecha, {i['username']}!{sep}To get started, type `m!help` in this server to get started!",
+            "date": time.time(),
+            "title": "Welcome To Mecha!",
+            "type": "bot",
+            "read": False
+          }
+        }}}
+      ),
+    ]
+  )
+  print(f"Updated {i['username']}!")
+"""
+
 def update_level(user:voltage.User):
   if userdb.find_one({'userid':user.id}):
     user_data = userdb.find_one({'userid':user.id})
@@ -162,7 +182,7 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
     return "User already exists."
   try:
     userdb.insert_one({
-        "_id": len(userdb.count_documents ({})) + 1,
+        "_id": userdb.count_documents({}) + 1,
         "username": user.name,
         "userid": user.id,
         "levels": {
@@ -190,6 +210,17 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
                 "early_user": True,
                 "beta_tester": True
             }
+        },
+        "notifications": {
+          "inbox": {
+            "1":{
+              "message": f"Welcome to Mecha, {user.name}!{sep}To get started, type `m!help` in this server to get started!",
+              "date": time.time(),
+              "title": "Welcome To Mecha!",
+              "type": "bot",
+              "read": False
+            }
+          }
         },
         "status": {
             "developer": False,
@@ -280,6 +311,12 @@ async def do():
     ])
   print(f"Updated {userdb.count_documents({})} users!")
 
+async def get():
+  """ GET Stats """
+  res = RBList.getStats()
+  print(res)
+
+
 def post():
   """ POST Stats """
   res = requests.post(
@@ -292,17 +329,10 @@ def post():
   if res.status_code != 200:
     print(res)
 
-def getStats():
-  """ GET Stats """
-  res = RBList.getStats()
-  print(res)
-
-
 def checkVotes():
   """ GET Votes """
   res = RBList.checkVotes()
   print(res)
-
 
 def getVoter(user: voltage.User):
   """ Check Voter """

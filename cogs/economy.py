@@ -1,4 +1,4 @@
-import voltage, json, random, pymongo, time, datetime
+import voltage, json, random, pymongo, time, datetime, asyncio
 from functools import wraps
 from voltage.ext import commands
 from pymongo.mongo_client import MongoClient
@@ -74,12 +74,9 @@ def match_job_to_short_form(job_name, short_forms, joblist):
 def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function to add users to the database if they dont exist yet. but it works..
   if userdb.find_one({"userid": user.id}):
     return "User already exists."
-  id = 1
-  for i in userdb.find({}):
-    id += 1
   try:
     userdb.insert_one({
-        "_id": id,
+        "_id": userdb.count_documents({}) + 1,
         "username": user.name,
         "userid": user.id,
         "levels": {
@@ -95,7 +92,7 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
             "total": 0,
             "data": {
                 "inventory": {
-                    "bank_loan": 1
+                    "Bank Loan": 1
                 },
                 "job": "unemployed"
             },
@@ -108,11 +105,26 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
                 "beta_tester": True
             }
         },
+        "notifications": {
+          "inbox": {
+            "1":{
+              "message": f"Welcome to Mecha, {user.name}!{sep}To get started, type `m!help` in this server to get started!",
+              "date": time.time(),
+              "title": "Welcome To Mecha!",
+              "type": "bot",
+              "read": False
+            }
+          }
+        },
         "status": {
+            "developer": False,
+            "admin": False,
+            "moderator": False,
+            "friend": False,
+            "premium": False,
+            "bug": False,
             "beta": False,
             "familyfriendly": False,
-            "premium": False,
-            "admin": False,
             "isBot": isbot,
             "banned": False
         }
@@ -202,7 +214,7 @@ def setup(client) -> commands.Cog:
                 items = []
             if len(items) == 0:
                 items = ["You have no items :boohoo:"]
-            embed = voltage.SendableEmbed(title=f"{user.name}'s balance", icon_url=user.display_avatar.url, description=f"**Wallet Balance:**{sep}> ${userdata['economy']['wallet']:,}{sep}{sep}**Bank Balance:**{sep}> ${userdata['economy']['bank']:,}{sep}**Inventory:**{sep}> {f'{sep}> '.join(itemstuff)}", colour="#516BF2")
+            embed = voltage.SendableEmbed(title=f"{user.name}'s balance", icon_url=user.display_avatar.url, description=f"**Wallet Balance:**{sep}> \${userdata['economy']['wallet']:,}{sep}{sep}**Bank Balance:**{sep}> \${userdata['economy']['bank']:,}{sep}**Inventory:**{sep}> {f'{sep}> '.join(itemstuff)}", colour="#516BF2")
             await ctx.send(embed=embed)
         else:
             await ctx.send(
@@ -412,13 +424,13 @@ def setup(client) -> commands.Cog:
             if count <= 3:
                 emoji = ["0", "🥇", "🥈", "🥉"]
                 if len(doc['username']) <= 10:
-                    lb.append(f"{'#' * count} **{emoji[count]}** {doc['username']}{sep}#### **${total:,}**")
+                    lb.append(f"{'#' * count} **{emoji[count]}** {doc['username']}{sep}#### **\${total:,}**")
                 elif len(doc['username']) > 10 and count == 1:
-                    lb.append(f"{'###' * count} **{emoji[count]}** {doc['username']}{sep}#### **${total:,}**")
+                    lb.append(f"{'###' * count} **{emoji[count]}** {doc['username']}{sep}#### **\${total:,}**")
                 elif count == 3 and len(doc['username']) < 20:
-                    lb.append(f"{'#' * count} **{emoji[count]}** {doc['username']}{sep}#### **${total:,}**")
+                    lb.append(f"{'#' * count} **{emoji[count]}** {doc['username']}{sep}#### **\${total:,}**")
                 else:
-                    lb.append(f"{'#' * count + '#'} **{emoji[count]}** {doc['username']}{sep}#### **${total:,}**")
+                    lb.append(f"{'#' * count + '#'} **{emoji[count]}** {doc['username']}{sep}#### **\${total:,}**")
             elif count == 4:
                 lb.append(f"**#4** -> {doc['username']}: {total:,}")
             else:
@@ -503,20 +515,43 @@ def setup(client) -> commands.Cog:
             )
             return await ctx.reply(embed=embed)
         elif userdb.find_one({"userid": ctx.author.id}):
+            embed = voltage.SendableEmbed(
+                title=ctx.author.display_name,
+                icon_url=ctx.author.display_avatar.url,
+                description=f"Flipping a coin for **\${bet:,}**... {sep}You now have `${userdb.find_one({'userid': ctx.author.id})['economy']['wallet']-bet:,}` in your wallet!",
+                colour="#00FF00",
+                media = "https://media.tenor.com/images/60b3d58b8161ad9b03675abf301e8fb4/tenor.gif"
+            )
+            msg = await ctx.reply(embed=embed)
             userdb.bulk_write([
                 pymongo.UpdateOne(
                     {"userid": ctx.author.id},
                     {"$inc": {"economy.wallet": -bet}}
                 )
             ])
+            await asyncio.sleep(3)
             if random.choice(['heads', 'tails']) == choice.lower():
+                userdb.bulk_write([
+                    pymongo.UpdateOne(
+                        {"userid": ctx.author.id},
+                        {"$inc": {"economy.wallet": bet*2}}
+                    )
+                ])
                 embed = voltage.SendableEmbed(
                     title=ctx.author.display_name,
                     icon_url=ctx.author.display_avatar.url,
-                    description=f"You won **{bet:,}**! {sep}You now have `{userdb.find_one({'userid': ctx.author.id})['economy']['wallet']:,}` in your wallet!",
+                    description=f"You won **\${bet:,}**! {sep}You now have `${userdb.find_one({'userid': ctx.author.id})['economy']['wallet']:,}` in your wallet!",
                     colour="#00FF00"
                 )
-                return await ctx.reply(embed=embed)
+                return await msg.edit(embed=embed)
+            else:
+                embed = voltage.SendableEmbed(
+                    title=ctx.author.display_name,
+                    icon_url=ctx.author.display_avatar.url,
+                    description=f"You lost **\${bet:,}**! {sep}You now have `${userdb.find_one({'userid': ctx.author.id})['economy']['wallet']:,}` in your wallet!",
+                    colour="#FF0000"
+                )
+                return await msg.edit(embed=embed)
     
     @eco.command(name="blackjack", aliases=["bj"], description="Play a game of blackjack!")
     @limiter(7, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
@@ -626,7 +661,7 @@ def setup(client) -> commands.Cog:
             if dealer_value > 21 or player_value > dealer_value:
                 embed = voltage.SendableEmbed(
                     title=f"{ctx.author.display_name}'s blackjack game",
-                    description=f"You win!{sep}Dealer busted with a total of {dealer_value}.{sep}Your hand: {' '.join(player_hand)} (Total: {player_value})",
+                    description=f"You won `${bet*2}`!{sep}Dealer busted with a total of {dealer_value}.{sep}Your hand: {' '.join(player_hand)} (Total: {player_value})",
                     colour="#198754"
                 )
                 await ctx.reply(embed=embed)
@@ -652,9 +687,7 @@ def setup(client) -> commands.Cog:
    
     @eco.command(description="Pay another user from your wallet!", name="pay", aliases=['transfer', 'sendmoney'])
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
-    async def pay(ctx, member: str, amount:int):
-        if member:
-            member = ctx.author
+    async def pay(ctx, member:voltage.User, amount:int):
         if not str(amount).isdigit():
             return await ctx.reply("Please enter a valid amount!")
         if amount <= 0:

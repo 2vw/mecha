@@ -307,6 +307,9 @@ def setup(client) -> commands.Cog:
   @owner.command()
   async def give(ctx, user:voltage.User, amount:int):
     if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
+      i = 1
+      for _ in userdb.find_one({"userid": user.id})["notifications"]["inbox"]:
+        i += 1
       userdb.bulk_write([
         pymongo.UpdateOne(
           {
@@ -323,8 +326,14 @@ def setup(client) -> commands.Cog:
             "userid": user.id
           },
           {
-            "$push": {
-              "notifications.inbox": f"You've recieved {amount:,} coins as per compensation for being affected by a bug! Use `m!balance` to check your balance."
+            "$set": {
+              f"notifications.inbox.{str(i)}": {
+                "message":f"You've recieved {amount:,} coins as per compensation for being affected by a bug! Use `m!balance` to check your balance.",
+                "date": time.time(),
+                "title": "You've been affected by a bug!",
+                "type": "admin",
+                "read": False
+              }
             }
           }
         )
