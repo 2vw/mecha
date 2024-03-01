@@ -53,6 +53,12 @@ bard = BardAsync(token=config['BARDTOKEN'], token_from_browser=True)
 sep = "\n"
 DBclient = motor.motor_asyncio.AsyncIOMotorClient(config['MONGOURI'])
 
+with open("json/data.json", "r") as f:
+  data = json.load(f)
+  data['uptime'] =  int(time())
+with open("json/data.json", "w") as r:
+  json.dump(data, r, indent=2)
+
 async def get_prefix(message, client):
   if (await userdb.find_one({"userid": message.author.id})) is not None:
     return (await userdb.find_one({"userid": message.author.id}))['prefixes']
@@ -445,11 +451,6 @@ async def stayon():
 @client.listen("ready")
 async def ready():
   post()
-  with open("json/data.json", "r") as f:
-    data = json.load(f)
-    data['uptime'] =  int(time.time())
-  with open("json/data.json", "w") as r:
-    json.dump(data, r, indent=2)
   print("Up and running") # Prints when the client is ready. You should know this
   await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status(), stayon(), do())
 
@@ -635,5 +636,6 @@ for filename in os.listdir("./cogs"):
       print(e)
 
 while True:
+  os.system("cls" if os.name == "nt" else "clear")
   alive() #yeah blah blah stolen from old Mecha but hey, it works so why not copy and paste it, we're developers.
   client.run(config['TOKEN'], bot=True, banner=False) # Replace with your token in config, config.json to be exact, for everyone else, you know what this does stop fucking stalling pls :).
