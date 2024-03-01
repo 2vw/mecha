@@ -1,4 +1,4 @@
-import voltage, asyncio, requests
+import voltage, asyncio, requests, aiohttp
 import time, json
 from functools import wraps
 import datetime
@@ -54,10 +54,11 @@ def setup(client) -> commands.Cog:
                 messages = await ctx.channel.history(limit=amount)
                 ids = [m.id for m in messages]
                 await ctx.send("Purging...", delete_after=2)
-                requests.delete(
-                    f"https://api.revolt.chat/channels/{ctx.channel.id}/messages/bulk", 
-                    json={"ids": ids},
-                    headers={"x-bot-token": config['TOKEN']},
+                async with aiohttp.ClientSession() as session:
+                    await session.delete(
+                        url=f"https://api.revolt.chat/channels/{ctx.channel.id}/messages/bulk",
+                        headers={"x-bot-token": config['TOKEN']},
+                        json={"ids": ids}
                     )
                 embed = voltage.SendableEmbed(
                     description=f"# Purged!\nPurged {amount} messages in {round(time.time() - starttime, 2)}s!",

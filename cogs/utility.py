@@ -1,4 +1,4 @@
-import voltage, pymongo, os, asyncio, json, datetime, time, pendulum, re, requests, pilcord
+import voltage, pymongo, os, asyncio, json, datetime, time, pendulum, re, requests, pilcord, aiohttp
 from mcstatus import JavaServer
 from functools import wraps
 from voltage.ext import commands
@@ -440,20 +440,20 @@ See you in `{time}`!
     @utility.command()
     async def confirm(ctx):
         try:
-            result = requests.post(
-                url=f"https://api.revolt.chat/channels/{ctx.channel.id}/messages",
-                headers={
-                    "x-bot-token": config['TOKEN']
-                },
-                json={
-                    "content": "Do you confirm?",
-                    "interactions": {
-                        "reactions": [
-                            "01HPX2NV8VVPYKFV0YYADQH33X"
-                        ]
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url=f"https://api.revolt.chat/channels/{ctx.channel.id}/messages",
+                    headers={"x-bot-token": config['TOKEN']},
+                    json={
+                        "content": "Do you confirm?",
+                        "interactions": {
+                            "reactions": [
+                                "01HPX2NV8VVPYKFV0YYADQH33X"
+                            ]
+                        }
                     }
-                }
-            )
+                ) as response:
+                    result = await response.json()
             
         except Exception as e:
             return e
