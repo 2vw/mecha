@@ -32,15 +32,27 @@ def setup(client) -> commands.Cog:
         "Some commands for moderation, in, out, and all around."
     )
 
-    @mod.command(description="Sets the nickname of a user!", name="nickname", aliases=['setnick', 'setusername', 'snick', 'suser'])
+    @mod.command(description="Sets the nickname of a user!", name="nickname", aliases=['sn', 'username', 'setname'])
     @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
-    async def nickname(ctx, member: voltage.User, *, nick):
-        if ctx.author.permissions.manage_nicknames and ctx.me.permissions.manage_nicknames:
-            try:
-                await member.change_nickname(nick)
-                await ctx.reply(f"Changed {member.name}'s nickname to {nick}!")
-            except:
-                await ctx.reply("Something went wrong! Sorry about that!")
+    async def nickname(ctx, member: voltage.User, *, nick:str):
+        if ctx.author.permissions.manage_nicknames or ctx.author.id == ctx.server.owner.id:
+            async with aiohttp.ClientSession() as s:
+                await s.patch(
+                    url=f"https://api.revolt.chat/servers/{ctx.server.id}/members/{member.id}",
+                    headers={"x-bot-token": config['TOKEN']},
+                    json={"nickname": nick}
+                )
+                await s.close()
+            embed = voltage.SendableEmbed(
+                title="Nickname",
+                description=f"Changed {member.display_name}'s nickname to `{nick}`!",
+                colour="#00FF00",
+                icon_url=member.display_avatar.url
+            )
+            await ctx.send(embed=embed)
+        else:
+            await ctx.reply("You don't have permission to do that!")
+            
         
     
     @mod.command(description="BEGONE MESSAGES!", name="purge", aliases=["clear", "c", "prune"])
@@ -80,29 +92,12 @@ def setup(client) -> commands.Cog:
     @mod.command(description="Ban a user from your server!")
     @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def ban(ctx, member: voltage.Member):
-        if commands.has_perms(ban_members=True) and commands.bot_has_perms(ban_members=True):
-            if len(ctx.author.roles) > len(member.roles):
-                return await ctx.send(
-                    "That user is above your top role! I cannot ban them!"
-                )
-            elif ctx.author.permissions.ban_members:
-                return await ctx.send(f"Attempting to ban {member.display_name}!")
-            elif member.id == ctx.author.id:
-                return await ctx.send("You can't ban yourself!")
-            elif member.id == "01FZB4GBHDVYY6KT8JH4RBX4KR":
-                return await ctx.send("You want to ban me?! How dare you :boohoo:")
-            elif member.permissions.ban_members:
-                return await ctx.send(
-                    "This user is an administrator! I cannot ban them! Please remove their administrative permissions before continuing."
-                )
-            try:
-                await member.ban()
-                embed = voltage.SendableEmbed(
-                    title="Done!", description=f"Just Banned {member.name}!", colour="#516BF2"
-                )
-                await ctx.reply(content="[]()]", embed=embed)
-            except Exception as e:
-                await ctx.send(f"I was unable to ban {member.display_name}!\n```\n{e}\n```")
+        if ctx.author.permissions.ban_members:
+            return await ctx.send(f"Attempting to ban {member.name}!")
+        elif member.id == ctx.author.id:
+            return await ctx.send("You can't ban yourself!")
+        else:
+            return await ctx.send("You dont have the required permission!")
 
     @mod.command(description="Kick a user from your server!")
     @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
@@ -138,4 +133,20 @@ def setup(client) -> commands.Cog:
         except Exception as e:
             await ctx.send(f"I was unable to kick {member.display_name}!\n```\n{e}\n```")
 
+    @mod.command(description="Go to the corner! >_<", name="timeout", aliases=["time", "to", "corner", "gotocorner"])
+    async def timeout(ctx, member: voltage.Member, duration: int):
+        if ctx.author.permissions.timeout_members and ctx.me.permissions.timeout_members:
+            try:
+                await member.timeout(duration)
+                embed = voltage.SendableEmbed(
+                    title="Done!",
+                    description=f"Timed out {member.display_name} for {duration:.0f} seconds!",
+                    colour="#516BF2"
+                )
+                return await ctx.reply(embed=embed)
+            except:
+                return await ctx.reply("I was unable to timeout that user!")
+        else:
+            return await ctx.reply("You don't have the required permission `Timeout Members` that is required for this command!")
+    
     return mod
