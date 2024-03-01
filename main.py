@@ -42,11 +42,13 @@ from host import alive
 from time import time
 from functools import wraps
 import motor.motor_asyncio
-
+from bardapi import BardAsync
 from revoltbots import RBL
 
 with open("json/config.json", "r") as f:
   config = json.load(f)
+
+bard = BardAsync(token=config['BARDTOKEN'], token_from_browser=True)
 
 sep = "\n"
 DBclient = motor.motor_asyncio.AsyncIOMotorClient(config['MONGOURI'])

@@ -1,5 +1,16 @@
-import voltage, pymongo, os, random, aiohttp, requests
+import voltage, pymongo, os, random, aiohttp, requests, json
 from voltage.ext import commands
+from bardapi import BardAsync
+import google.generativeai as genai
+
+
+with open("json/config.json", "r") as f:
+  config = json.load(f)
+
+genai.configure(api_key=config["GOOGLEAPIKEY"])
+
+model = genai.GenerativeModel('gemini-pro')
+bard = BardAsync(token=config['BARDTOKEN'])
 
 def setup(client) -> commands.Cog:
   fun = commands.Cog(
@@ -45,55 +56,58 @@ def setup(client) -> commands.Cog:
     )
     await ctx.reply(embed=embed)
 
-  @fun.command(
-    description="Get some cute doggo pics",
-    aliases=[
-      "dogpic",
-      "doggos",
-      "dogs",
-      "dogpics",
-      "dogpictures",
-      "getdog",
-      "getdogpics"
-  ],
-    name="dog"
-  )
-  async def dog(ctx):
-    async with aiohttp.ClientSession() as session:
-      q = requests.get("https://some-random-api.ml/img/dog/")
-      json = q.json()['link']
-    embed = voltage.SendableEmbed(
-      title="Doggo!",
-      icon_url=ctx.author.display_avatar.url,
-      media=json,
-      colour="#516BF2"
-    )
-    await ctx.send(content="[]()", embed=embed)
+  def split_text(text, max_chars):
+    """
+    Splits a large text into groups by newlines if they're over a character limit,
+    without cutting out words while keeping its format.
+
+    Args:
+        text (str): The input text.
+        max_chars (int): The maximum number of characters per group.
+
+    Returns:
+        list: A list of strings, each representing a group of text.
+    """
+    lines = text.split("\n")
+    result = []
+    current_group = ""
+
+    for line in lines:
+        if len(current_group) + len(line) <= max_chars:
+            current_group += line + "\n"
+        else:
+            result.append(current_group.strip())
+            current_group = line + "\n"
+
+    if current_group:
+        result.append(current_group.strip())
+
+    return result
 
   @fun.command(
-    description="Get some cute kitty pics",
-    aliases=[
-      "kitpic",
-      "kitten",
-      "cats",
-      "catpics",
-      "catpictures",
-      "getcat",
-      "getcatpicss"
-  ],
-    name="cat"
+    name="ai",
+    aliases=['talkai'],
+    description="Talk to an AI"
   )
-  async def cat(ctx):
-    async with aiohttp.ClientSession() as session:
-      q = requests.get("https://some-random-api.ml/img/cat/")
-      json = q.json()['link']
+  async def ai(ctx, *, question):
     embed = voltage.SendableEmbed(
-      title="Doggo!",
-      icon_url=ctx.author.display_avatar.url,
-      media=json,
+      title=f"{ctx.author.name}",
+      icon_url=ctx.author.avatar.url,
+      description=f"Your question: `{question}`\n\nGenerating Response..",
       colour="#516BF2"
     )
-    await ctx.send(content="[]()", embed=embed)
+    await ctx.reply(embed=embed)
+    chat = model.start_chat()
+    response = chat.send_message(question)
+
+    groups = split_text(response.text, 800)
+
+    for i, group in enumerate(groups):
+      embed = voltage.SendableEmbed(
+        description=group,
+        colour="#516BF2"
+      )
+      await ctx.send(embed=embed)
 
     
   return fun

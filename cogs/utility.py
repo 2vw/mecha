@@ -268,9 +268,9 @@ See you in `{time}`!
     )
     async def bio(ctx, *, bio: str):
         if userdb.find_one({"userid": ctx.author.id}):
-            if len(bio) > 250:
+            if len(bio) > 300:
                 return await ctx.send(
-                    "Your bio is too looooooooooooooooooooooooooong! Make sure its under 250 characters!"
+                    "Your bio is too looooooooooooooooooooooooooong! Make sure its 300 characters or less!"
                 )
             userdb.update_one(
                 {"userid": ctx.author.id},
@@ -284,7 +284,7 @@ See you in `{time}`!
                 "You need to create an account first!"
             )
     
-    @utility.command(name="xp", description="Gets your XP and level!", aliases=['level', 'userinfo'])
+    @utility.command(name="xp", description="Gets your XP and level!", aliases=['level'])
     @limiter(3, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def xp(ctx, user:voltage.User=None):
         if not user:
