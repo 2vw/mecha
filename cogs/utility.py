@@ -1,9 +1,8 @@
-import voltage, pymongo, os, asyncio, json, datetime, time, pendulum, re, requests, pilcord, aiohttp
+import voltage, motor, os, asyncio, pymongo, json, datetime, time, pendulum, re, requests, pilcord, aiohttp
+import motor.motor_asyncio
 from mcstatus import JavaServer
 from functools import wraps
 from voltage.ext import commands
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
 
 sep = "\n"
 
@@ -26,7 +25,7 @@ async def get_badges(badges, user:voltage.User):
         
     for badge in badges:
         if badge.lower() in data:
-            if userdb.find_one({"userid": user.id})['status'][badge.lower()]:
+            if (await userdb.find_one({"userid": user.id}))['status'][badge.lower()]:
                 badgeslist.append(f":{data.get(badge)}:")
     
     # Output the sorted array of badge names
@@ -52,7 +51,7 @@ def limiter(cooldown: int, *, on_ratelimited = None, key = None):
 with open("json/config.json", "r") as f:
     config = json.load(f)
 
-DBclient = MongoClient(config["MONGOURI"])
+DBclient = motor.motor_asyncio.AsyncIOMotorClient(config['MONGOURI'])
 
 db = DBclient["beta"]
 userdb = db["users"]
@@ -64,7 +63,7 @@ def setup(client) -> commands.Cog:
     "Utility commands for Mecha, these commands consist of leaderboard commands, leveling commands, and more."
     )
 
-    """@utility.command(
+    @utility.command(
         name="profile",
         aliases=["ui", "userinfo"],
         description = "Get information on any user! Including yourself!"
@@ -72,29 +71,28 @@ def setup(client) -> commands.Cog:
     async def profile(ctx, user: voltage.User = None):
         if not user:
             user = ctx.author
-        if userdb.find_one({"userid": user.id}):
-            userdata = userdb.find_one({"userid": user.id})
+        if (await userdb.find_one({"userid": user.id})):
+            userdata = (await userdb.find_one({"userid": user.id}))
             data = userdata['status']
             badges = await get_badges(data, user)
             badgetext = f"{sep}## {''.join(badges)}"
             ubio = str(userdata['profile']['bio']),
             colour = userdata['profile']['colour']
-        elif not userdb.find_one({"userid": user.id}):
+        elif not (await userdb.find_one({"userid": user.id})):
             colour = "#454FBF"
             badgetext = ""
             ubio = "No bio set."
         userdate = user.created_at
         embed = voltage.SendableEmbed(
             title=f"{user.display_name}'s Profile",
-            description=f###
+            description=f"""###
 ### **Username:** `{user.name}#{user.discriminator}`{badgetext}
 > **ID:** `{user.id}`
 ### **Bio:** 
-> {ubio}
-###,
+> {ubio}""",
             colour=colour
         )
-        await ctx.reply(embed=embed)"""
+        await ctx.reply(embed=embed)
 
     @utility.command()
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
@@ -244,7 +242,8 @@ See you in `{time}`!
     async def leaderboard(ctx):
         lb = []
         count = 0
-        for doc in userdb.find().sort([("levels.totalxp", pymongo.DESCENDING)]).limit(10):
+        d = userdb.find().sort([("levels.totalxp", pymongo.DESCENDING)]).limit(10)
+        for doc in (await d.to_list(length=10)):
             count += 1
             if count <= 3:
                 emoji = ["0", "🥇", "🥈", "🥉"]
@@ -285,13 +284,13 @@ See you in `{time}`!
                 "You need to create an account first!"
             )
     
-    @utility.command(name="xp", description="Gets your XP and level!", aliases=["profile", 'level', 'ui', 'userinfo'])
+    @utility.command(name="xp", description="Gets your XP and level!", aliases=['level', 'userinfo'])
     @limiter(3, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def xp(ctx, user:voltage.User=None):
         if not user:
             user = ctx.author
         try:
-            data = userdb.find_one({'userid':user.id})
+            data = (await userdb.find_one({'userid':user.id}))
         except:
             return await ctx.send("User not found!")
         level = data['levels']['level'] # this is so stupid
@@ -390,10 +389,10 @@ See you in `{time}`!
     )
     async def removeprefix(ctx, *, prefix):
         if userdb.find_one({'userid':ctx.author.id}):
-            if len(userdb.find_one({'userid':ctx.author.id})['prefixes']) > 1 :
-                if prefix in userdb.find_one({'userid':ctx.author.id})['prefixes']:
+            if len((await userdb.find_one({'userid':ctx.author.id})['prefixes'])) > 1 :
+                if prefix in (await userdb.find_one({'userid':ctx.author.id}))['prefixes']:
                     userdb.update_one({'userid':ctx.author.id}, {'$pull':{'prefixes':prefix}})
-                    prefixes = userdb.find_one({'userid':ctx.author.id})['prefixes']
+                    prefixes = (await userdb.find_one({'userid':ctx.author.id}))['prefixes']
                     embed = voltage.SendableEmbed(
                         title="Removed a prefix from your list!",
                         description=f"Removed `{prefix}` from your list of {len(prefixes)}!{sep}To see your prefixes, type `m!prefixes` or alternatively; mention me!",
@@ -464,9 +463,9 @@ See you in `{time}`!
         aliases=['ff', 'family-friendly', 'f-f'],
     )
     async def familyfriendly(ctx, toggle):
-        if userdb.find_one({'userid': ctx.author.id}):
+        if (await userdb.find_one({'userid': ctx.author.id})):
             if toggle.lower() in ["yes", "on", "activated", "y", "online", "true"]:
-                userdb.update_one(
+                await userdb.update_one(
                     {
                         'userid': ctx.author.id
                     },
@@ -484,7 +483,7 @@ See you in `{time}`!
                 )
                 await ctx.send(content="[]()", embed=embed)
             elif toggle.lower() in ["no", "false", "off", "deny", "removed", "n"]:
-                userdb.update_one(
+                await userdb.update_one(
                     {
                         'userid': ctx.author.id
                     },
@@ -515,9 +514,9 @@ See you in `{time}`!
         notifications_per_page = 5
         skipped_notifications = (page - 1) * notifications_per_page
         i = 0 + skipped_notifications
-        user_notifications = userdb.find_one(
+        user_notifications = (await userdb.find_one(
             {'userid': ctx.author.id}
-        )['notifications']['inbox']
+        ))['notifications']['inbox']
 
         if len(user_notifications) == 0:
             description = "No notifications found. 😭"

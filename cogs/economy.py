@@ -1,4 +1,5 @@
-import voltage, json, random, pymongo, time, datetime, asyncio
+import voltage, json, random, pymongo, time, datetime, asyncio, motor
+import motor.motor_asyncio
 from functools import wraps
 from voltage.ext import commands
 from pymongo.mongo_client import MongoClient
@@ -32,7 +33,7 @@ def limiter(cooldown: int, *, on_ratelimited = None, key = None):
 with open("json/config.json", "r") as f:
     config = json.load(f)
 
-DBclient = MongoClient(config["MONGOURI"])
+DBclient = motor.motor_asyncio.AsyncIOMotorClient(config['MONGOURI'])
 
 db = DBclient["beta"]
 userdb = db["users"]
@@ -71,11 +72,11 @@ def match_job_to_short_form(job_name, short_forms, joblist):
     except ValueError:
         return "Job not found."
 
-def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function to add users to the database if they dont exist yet. but it works..
-  if userdb.find_one({"userid": user.id}):
+async def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function to add users to the database if they dont exist yet. but it works..
+  if (await userdb.find_one({"userid": user.id})):
     return "User already exists."
   try:
-    userdb.insert_one({
+    await userdb.insert_one({
         "_id": userdb.count_documents({}) + 1,
         "username": user.name,
         "userid": user.id,
@@ -134,29 +135,29 @@ def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function 
     return f"Sorry, An Error Occured!{sep}{sep}```{sep}{e}{sep}```"
 
 async def buy_item(ctx, item:str, price:int): # this sucks but it works
-    if userdb.find_one({"userid": ctx.author.id}):
-        userdata = userdb.find_one({"userid": ctx.author.id})
+    if (await userdb.find_one({"userid": ctx.author.id})):
+        userdata = (await userdb.find_one({"userid": ctx.author.id}))
         if userdata['economy']['wallet'] < price:
             return await ctx.reply("You don't have enough money to purchase this!")
         if item in userdata['economy']['data']['inventory']:
-            userdb.bulk_write([
+            await userdb.bulk_write([
                 pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -price}}),
                 pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {f"economy.data.inventory.{item.lower()}": 1}})
             ])
         else:
-            userdb.bulk_write([
+            await userdb.bulk_write([
                 pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {f"economy.data.inventory.{item.lower()}": 1}}),
                 pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -price}})
             ])
         return await ctx.reply(f"You bought **{item.capitalize()}** for **{price}** coins!")
 
 async def apply_job(ctx, job:str):
-    if userdb.find_one({"userid": ctx.author.id}):
-        userdata = userdb.find_one({"userid": ctx.author.id})
+    if (await userdb.find_one({"userid": ctx.author.id})):
+        userdata = (await userdb.find_one({"userid": ctx.author.id}))
         if "resume" in userdata['economy']['data']['inventory']:
             jobname = match_job_to_short_form(job.lower(), short_forms, joblist)
             if random.randint(1, 100) < 75:
-                userdb.update_one({"userid": ctx.author.id}, {"$set": {"economy.data.job": jobname}})
+                await userdb.update_one({"userid": ctx.author.id}, {"$set": {"economy.data.job": jobname}})
                 embed = voltage.SendableEmbed(
                     title="Application Accepted",
                     description=f"You were accepted for **{jobname.capitalize()}**!",
@@ -164,7 +165,7 @@ async def apply_job(ctx, job:str):
                 )
                 return await ctx.reply(embed=embed)
             else:
-                userdb.bulk_write([
+                await userdb.bulk_write([
                     pymongo.UpdateOne({"userid": ctx.author.id}, {"$set": {"economy.data.job": "unemployed"}}),
                     pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": 250}})
                 ])
@@ -187,7 +188,7 @@ def setup(client) -> commands.Cog:
         await ctx.send("You dont have a bank account registered in our database! I can resgister you now, is that okay? *(Yes/No)*")
         message = await client.wait_for("message", check=lambda message: message.author.id != client.user.id, timeout=15)
         if any(x in message.content.lower() for x in ["yes", "y", "yea", "yeah", "yup"]):
-            return await ctx.send(add_user(ctx.author))
+            return await ctx.send(await add_user(ctx.author))
         else:
             return await ctx.send("Oh... Nevermind then!")
 
@@ -196,9 +197,9 @@ def setup(client) -> commands.Cog:
     async def bal(ctx, user:voltage.User=None):
         if not user:
             user = ctx.author
-        if userdb.find_one({"userid": user.id}):
+        if (await userdb.find_one({"userid": user.id})):
             items = 0
-            userdata = userdb.find_one({"userid": user.id})
+            userdata = (await userdb.find_one({"userid": user.id}))
             try:
                 items = userdata['economy']['data']["inventory"]
                 itemlist = {}
@@ -222,7 +223,7 @@ def setup(client) -> commands.Cog:
             )
             message = await client.wait_for("message", check=lambda message: message.author.id != client.user.id, timeout=15)
             if any(x in message.content.lower() for x in ["yes", "y", "yea", "yeah", "yup"]):
-                return await ctx.send(add_user(ctx.author))
+                return await ctx.send(await add_user(ctx.author))
             else:
                 return await ctx.send("Oh... Nevermind then!")
 
@@ -355,7 +356,7 @@ def setup(client) -> commands.Cog:
             "Imagine begging in 2024, gofundme is where it is at",
         ]
         percentage = random.randint(1, 100)
-        if not userdb.find_one({"userid": ctx.author.id}):
+        if not (await userdb.find_one({"userid": ctx.author.id})):
             await create_account(ctx)
         if random.randint(1,200) == 1 or ctx.author.display_name.lower() == "mechahater":
             embed = voltage.SendableEmbed(
@@ -364,7 +365,7 @@ def setup(client) -> commands.Cog:
                 description=f"YOU JUST GOT ROBBED! OH NO! THEY TOOK EVERYTHING IN YOUR WALLET WHADAFRICK!",
                 colour = "#FF0000"
             )
-            userdb.update_one(
+            await userdb.update_one(
                 {"userid": ctx.author.id},
                 {"$set": {"economy.wallet": 0}},
             )
@@ -376,7 +377,7 @@ def setup(client) -> commands.Cog:
                 description=f"{random.choice(people)} gave you `{amount:,}` coins! Now get a job you bum.",
                 color="#00FF00",
             )
-            userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": amount}})
+            await userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": amount}})
             return await ctx.send(embed=embed)
         else:
             embed = voltage.SendableEmbed(
@@ -391,10 +392,10 @@ def setup(client) -> commands.Cog:
     @limiter(60, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def work(ctx):
         amount = random.randint(500, 1000)
-        if not userdb.find_one({"userid": ctx.author.id}):
+        if not (await userdb.find_one({"userid": ctx.author.id})):
             await create_account(ctx)
         else:
-            userdata = userdb.find_one({"userid": ctx.author.id})
+            userdata = (await userdb.find_one({"userid": ctx.author.id}))
         if userdata['economy']['data']['job'] == "unemployed":
             return await ctx.send("You're unemployed, get a job u bum!")
         elif "resume" in userdata['economy']['data']["inventory"]:
@@ -405,7 +406,7 @@ def setup(client) -> commands.Cog:
                 color="#00FF00",
             )
             await ctx.send(embed=embed)
-            userdb.update_one(
+            await userdb.update_one(
                 {"userid": ctx.author.id}, {"$inc": {"economy.wallet": amount}}
             )
         else:
@@ -418,7 +419,8 @@ def setup(client) -> commands.Cog:
     async def richest(ctx):
         lb = []
         count = 0
-        for doc in userdb.find().sort([("economy.total", pymongo.DESCENDING)]).limit(10):
+        d = userdb.find().sort([("levels.totalxp", pymongo.DESCENDING)]).limit(10)
+        for doc in (await d.to_list(length=10)):
             total = doc['economy']['wallet'] + doc['economy']['bank']
             count += 1
             if count <= 3:
@@ -447,12 +449,12 @@ def setup(client) -> commands.Cog:
     @eco.command(description="Move money into your bank account!", name="deposit", aliases=['dep', 'tobank', 'dp', 'd'])
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def deposit(ctx, amount):
-        if userdb.find_one({"userid": ctx.author.id}):
-            userdata = userdb.find_one({"userid": ctx.author.id})["economy"]["wallet"]
+        if (await userdb.find_one({"userid": ctx.author.id})):
+            userdata = (await userdb.find_one({"userid": ctx.author.id}))["economy"]["wallet"]
             if userdata > 0:
                 if not amount.isdigit():
                     if any(x in amount.lower() for x in ["all", 'max', 'everything', 'maximum', 'a']):
-                        userdb.bulk_write([
+                        await userdb.bulk_write([
                             pymongo.UpdateOne(
                                 {"userid": ctx.author.id},
                                 {"$inc": {"economy.wallet": -userdata, "economy.bank": userdata}}
@@ -461,12 +463,12 @@ def setup(client) -> commands.Cog:
                         embed = voltage.SendableEmbed(
                             title=ctx.author.display_name,
                             icon_url=ctx.author.display_avatar.url,
-                            description=f"You deposited **all** your money into your bank account! {sep}You have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
+                            description=f"You deposited **all** your money into your bank account! {sep}You have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['bank']:,}` in your bank account!",
                             color="#00FF00",
                         )
                         await ctx.reply(embed=embed)
                 elif int(amount) < userdata:
-                    userdb.bulk_write([
+                    await userdb.bulk_write([
                         pymongo.UpdateOne(
                             {"userid": ctx.author.id},
                             {"$inc": {"economy.wallet": -int(amount), "economy.bank": int(amount)}}
@@ -476,7 +478,7 @@ def setup(client) -> commands.Cog:
                     embed = voltage.SendableEmbed(
                         title=ctx.author.display_name,
                         icon_url=ctx.author.display_avatar.url,
-                        description=f"You deposited `${amt:,}` into your bank account! {sep}You have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
+                        description=f"You deposited `${amt:,}` into your bank account! {sep}You have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['bank']:,}` in your bank account!",
                         color="#00FF00",
                     )
                     await ctx.reply(embed=embed)
@@ -506,7 +508,7 @@ def setup(client) -> commands.Cog:
             return await ctx.reply("Please enter heads or tails!")
         elif choice.lower() not in ['heads', 'tails']:
             return await ctx.reply("Please enter heads or tails!")
-        elif bet > userdb.find_one({"userid": ctx.author.id})["economy"]["wallet"]:
+        elif bet > (await userdb.find_one({"userid": ctx.author.id}))["economy"]["wallet"]:
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
                 icon_url=ctx.author.display_avatar.url,
@@ -514,16 +516,16 @@ def setup(client) -> commands.Cog:
                 colour="#FF0000"
             )
             return await ctx.reply(embed=embed)
-        elif userdb.find_one({"userid": ctx.author.id}):
+        elif (await userdb.find_one({"userid": ctx.author.id})):
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
                 icon_url=ctx.author.display_avatar.url,
-                description=f"Flipping a coin for **\${bet:,}**... {sep}You now have `${userdb.find_one({'userid': ctx.author.id})['economy']['wallet']-bet:,}` in your wallet!",
+                description=f"Flipping a coin for **\${bet:,}**... {sep}You now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']-bet:,}` in your wallet!",
                 colour="#00FF00",
                 media = "https://media.tenor.com/images/60b3d58b8161ad9b03675abf301e8fb4/tenor.gif"
             )
             msg = await ctx.reply(embed=embed)
-            userdb.bulk_write([
+            await userdb.bulk_write([
                 pymongo.UpdateOne(
                     {"userid": ctx.author.id},
                     {"$inc": {"economy.wallet": -bet}}
@@ -531,7 +533,7 @@ def setup(client) -> commands.Cog:
             ])
             await asyncio.sleep(3)
             if random.choice(['heads', 'tails']) == choice.lower():
-                userdb.bulk_write([
+                await userdb.bulk_write([
                     pymongo.UpdateOne(
                         {"userid": ctx.author.id},
                         {"$inc": {"economy.wallet": bet*2}}
@@ -540,7 +542,7 @@ def setup(client) -> commands.Cog:
                 embed = voltage.SendableEmbed(
                     title=ctx.author.display_name,
                     icon_url=ctx.author.display_avatar.url,
-                    description=f"You won **\${bet:,}**! {sep}You now have `${userdb.find_one({'userid': ctx.author.id})['economy']['wallet']:,}` in your wallet!",
+                    description=f"You won **\${bet:,}**! {sep}You now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']:,}` in your wallet!",
                     colour="#00FF00"
                 )
                 return await msg.edit(embed=embed)
@@ -548,7 +550,7 @@ def setup(client) -> commands.Cog:
                 embed = voltage.SendableEmbed(
                     title=ctx.author.display_name,
                     icon_url=ctx.author.display_avatar.url,
-                    description=f"You lost **\${bet:,}**! {sep}You now have `${userdb.find_one({'userid': ctx.author.id})['economy']['wallet']:,}` in your wallet!",
+                    description=f"You lost **\${bet:,}**! {sep}You now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']:,}` in your wallet!",
                     colour="#FF0000"
                 )
                 return await msg.edit(embed=embed)
@@ -558,7 +560,7 @@ def setup(client) -> commands.Cog:
     async def blackjack(ctx, bet:int=None):
         if not bet or not str(bet).is_integer() or bet < 0:
             return await ctx.reply("Please enter a valid bet!")
-        elif bet > userdb.find_one({"userid": ctx.author.id})["economy"]["wallet"]:
+        elif bet > (await userdb.find_one({"userid": ctx.author.id}))["economy"]["wallet"]:
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
                 icon_url=ctx.author.display_avatar.url,
@@ -566,8 +568,8 @@ def setup(client) -> commands.Cog:
                 colour="#FF0000"
             )
             return await ctx.reply(embed=embed)
-        elif userdb.find_one({"userid": ctx.author.id}):
-            userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -bet}})
+        elif (await userdb.find_one({"userid": ctx.author.id})):
+            await userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -bet}})
             deck = [
                 'SA', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10', 'SJ', 'SQ', 'SK',
                 'HA', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7', 'H8', 'H9', 'H10', 'HJ', 'HQ', 'HK',
@@ -615,7 +617,7 @@ def setup(client) -> commands.Cog:
                         colour="#198754"
                     )
                     await ctx.reply(embed=embed)
-                    userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": round(bet*2.5)}})
+                    await userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": round(bet*2.5)}})
                     return
                 elif player_value > 21:
                     embed = voltage.SendableEmbed(
@@ -665,7 +667,7 @@ def setup(client) -> commands.Cog:
                     colour="#198754"
                 )
                 await ctx.reply(embed=embed)
-                userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": bet*2}})
+                await userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": bet*2}})
             elif dealer_value == player_value:
                 embed = voltage.SendableEmbed(
                     title=f"{ctx.author.display_name}'s blackjack game",
@@ -673,7 +675,7 @@ def setup(client) -> commands.Cog:
                     colour="#ffc107"
                 )
                 await ctx.reply(embed=embed)
-                userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": bet}})
+                await userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": bet}})
             else:
                 embed = voltage.SendableEmbed(
                     title=f"{ctx.author.display_name}'s blackjack game",
@@ -682,7 +684,7 @@ def setup(client) -> commands.Cog:
                 )
                 await ctx.reply(embed=embed)
         else:
-            add_user(ctx.author)
+            await add_user(ctx.author)
             await ctx.send("Please try again!")
    
     @eco.command(description="Pay another user from your wallet!", name="pay", aliases=['transfer', 'sendmoney'])
@@ -706,14 +708,20 @@ def setup(client) -> commands.Cog:
             )
             await ctx.reply(embed=embed)
             return
-        sender_data = userdb.find_one({"userid": ctx.author.id})
+        sender_data = await userdb.find_one({"userid": ctx.author.id})
         if sender_data and sender_data["economy"]["wallet"] >= amount:
-            recipient_data = userdb.find_one({"userid": member.id})
+            recipient_data = (await userdb.find_one({"userid": member.id}))
             if recipient_data:
-                userdb.bulk_write([
+                await userdb.bulk_write([
                     pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -amount}}),
                     pymongo.UpdateOne({"userid": member.id}, {"$inc": {"economy.wallet": -amount}}),
-                    pymongo.UpdateOne({"userid": member.id}, {"$append": {"notifications.inbox": f"{ctx.author.display_name} paid you {amount:,} coins!"}}),
+                    pymongo.UpdateOne({"userid": member.id}, {"$append": {"notifications.inbox": {
+                        "title": f"Payment from {ctx.author.display_name}",
+                        "message": f"{ctx.author.display_name} paid you {amount:,} coins!",
+                        "date": time.time(),
+                        "read": False,
+                        "type": "member"
+                    }}}),
                 ])
                 embed = voltage.SendableEmbed(
                     title="Success!",
@@ -739,12 +747,12 @@ def setup(client) -> commands.Cog:
     @eco.command(description="Move money back into your wallet!", name="withdraw", aliases=['with', 'towallet', 'wd', 'w'])
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def withdraw(ctx, amount):
-        if userdb.find_one({"userid": ctx.author.id}):
-            userdata = userdb.find_one({"userid": ctx.author.id})["economy"]["bank"]
+        if (await userdb.find_one({"userid": ctx.author.id})):
+            userdata = (await userdb.find_one({"userid": ctx.author.id}))["economy"]["bank"]
             if userdata > 0:
                 if not amount.isdigit():
                     if any(x in amount.lower() for x in ["all", 'max', 'everything', 'maximum', 'a']):
-                        userdb.bulk_write([
+                        await userdb.bulk_write([
                             pymongo.UpdateOne(
                                 {"userid": ctx.author.id},
                                 {"$inc": {"economy.wallet": userdata, "economy.bank": -userdata}}
@@ -753,7 +761,7 @@ def setup(client) -> commands.Cog:
                         embed = voltage.SendableEmbed(
                             title=ctx.author.display_name,
                             icon_url=ctx.author.display_avatar.url,
-                            description=f"You withdrew **all** the money from your bank account! {sep}You have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
+                            description=f"You withdrew **all** the money from your bank account! {sep}You have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['bank']:,}` in your bank account!",
                             color="#198754",
                         )
                         await ctx.reply(embed=embed)
@@ -768,7 +776,7 @@ def setup(client) -> commands.Cog:
                     embed = voltage.SendableEmbed(
                         title=ctx.author.display_name,
                         icon_url=ctx.author.display_avatar.url,
-                        description=f"You withdrew `${amt:,}` from your bank account! {sep}You have `${userdb.find_one({'userid': ctx.author.id})['economy']['bank']:,}` in your bank account!",
+                        description=f"You withdrew `${amt:,}` from your bank account! {sep}You have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['bank']:,}` in your bank account!",
                         color="#00FF00",
                     )
                     await ctx.reply(embed=embed)
@@ -788,9 +796,9 @@ def setup(client) -> commands.Cog:
     @eco.command(name="daily", aliases=["dailies"], description="Claim your daily reward! (5,000 - 15,000 coins!)")
     @limiter(86400, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), '{hours}h {minutes}m {seconds}s')}`!"))
     async def daily(ctx):
-        if userdb.find_one({"userid": ctx.author.id}):
+        if (await userdb.find_one({"userid": ctx.author.id})):
             amount = random.randint(5000, 15000)
-            userdb.bulk_write(
+            await userdb.bulk_write(
                 [
                     pymongo.UpdateOne(
                         {"userid": ctx.author.id},
@@ -845,7 +853,7 @@ Golden Egg - `5000`
             )
             return await ctx.send(content="[]()", embed=embed)
         else:
-            if userdb.find_one({"userid": ctx.author.id}):
+            if (await userdb.find_one({"userid": ctx.author.id})):
                 if any(x in item.lower() for x in [
                     "r",
                     "resume",

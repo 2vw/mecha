@@ -34,16 +34,14 @@ curl -X PATCH -H "X-Session-Token: $token" -d "{ \"id:\": \"$roleid\", \"colour\
 
 """
 
-import random, pymongo, json, time, asyncio, datetime, requests, pilcord
+import random, motor, pymongo,  json, time, asyncio, datetime, requests, pilcord
 import voltage, os
 from voltage.ext import commands
 from voltage.errors import CommandNotFound, NotBotOwner, NotEnoughArgs, NotEnoughPerms, NotFoundException, BotNotEnoughPerms, RoleNotFound, UserNotFound, MemberNotFound, ChannelNotFound, HTTPError 
 from host import alive
 from time import time
 from functools import wraps
-
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
+import motor.motor_asyncio
 
 from revoltbots import RBL
 
@@ -51,11 +49,11 @@ with open("json/config.json", "r") as f:
   config = json.load(f)
 
 sep = "\n"
-DBclient = MongoClient(config['MONGOURI'], server_api=ServerApi('1'))
+DBclient = motor.motor_asyncio.AsyncIOMotorClient(config['MONGOURI'])
 
 async def get_prefix(message, client):
-  if userdb.find_one({"userid": message.author.id}):
-    return userdb.find_one({"userid": message.author.id})['prefixes']
+  if (await userdb.find_one({"userid": message.author.id})) is not None:
+    return (await userdb.find_one({"userid": message.author.id}))['prefixes']
   else:
     return ['m!']
                                                           
@@ -129,10 +127,10 @@ cooldowns = db['cooldowns']
 
 import time
 
-"""for i in userdb.find({}):
+"""for i in await userdb.find({}):
   userdb.bulk_write(
     [
-      pymongo.UpdateOne(
+      motor.UpdateOne(
         {'userid':i['userid']}, 
         {'$set':{'notifications.inbox': {
           "1":{
@@ -149,9 +147,9 @@ import time
   print(f"Updated {i['username']}!")
 """
 
-def update_level(user:voltage.User):
-  if userdb.find_one({'userid':user.id}):
-    user_data = userdb.find_one({'userid':user.id})
+async def update_level(user:voltage.User):
+  if await userdb.find_one({'userid':user.id}):
+    user_data = await userdb.find_one({'userid':user.id})
     lvl = user_data['levels']['level']
     xp = user_data['levels']['xp']
     if 0 >= (5 * (lvl ^ 2) + (50 * lvl) + 100 - xp):
@@ -159,12 +157,12 @@ def update_level(user:voltage.User):
       o = 1
       for i in user_data['notifications']['inbox']:
         o += 1
-      userdb.bulk_write([
-        pymongo.UpdateOne({'userid':user.id}, {'$inc':{'levels.level':1}}),
-        pymongo.UpdateOne({'userid':user.id}, {'$set':{'levels.xp':0}}),
-        pymongo.UpdateOne({'userid':user.id}, {'$inc':{'levels.totalxp':xp}}),
-        pymongo.UpdateOne({'userid':user.id}, {'$inc':{'economy.bank':100 * lvl + amt}}),
-        pymongo.UpdateOne({'userid':user.id}, {
+      await userdb.bulk_write([
+        motor.UpdateOne({'userid':user.id}, {'$inc':{'levels.level':1}}),
+        motor.UpdateOne({'userid':user.id}, {'$set':{'levels.xp':0}}),
+        motor.UpdateOne({'userid':user.id}, {'$inc':{'levels.totalxp':xp}}),
+        motor.UpdateOne({'userid':user.id}, {'$inc':{'economy.bank':100 * lvl + amt}}),
+        motor.UpdateOne({'userid':user.id}, {
           '$set':{
             f'notifications.inbox.{i}':{
               "message":f"Congratulations on leveling up to level {lvl+1}!{sep}You've recieved {100 * lvl + amt} coins as a reward!",
@@ -182,19 +180,19 @@ def update_level(user:voltage.User):
   else:
     return False
 
-def check_xp(user: voltage.User):
+async def check_xp(user: voltage.User):
   user_id = str(user.id)
-  user_data = userdb.find_one({'userid': user_id})
+  user_data = await userdb.find_one({'userid': user_id})
   if user_data:
     return user_data['levels']['xp']
   else:
     return 0
 
-def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function to add users to the database if they dont exist yet. but it works..
-  if userdb.find_one({"userid": user.id}):
+async def add_user(user: voltage.User, isbot:bool=False): # long ass fucking function to add users to the database if they dont exist yet. but it works..
+  if await userdb.find_one({"userid": user.id}):
     return "User already exists."
   try:
-    userdb.insert_one({
+    await userdb.insert_one({
         "_id": userdb.count_documents({}) + 1,
         "username": user.name,
         "userid": user.id,
@@ -281,26 +279,24 @@ async def update_stats(users, servers):
     )
   print("Updated stats! Users: " + str(users) + " Servers: " + str(servers))
 
-def pingDB(): # ping the database; never gonna use this, might need it, add it.
+async def pingDB(): # ping the database; never gonna use this, might need it, add it.
   try:
-    DBclient.admin.command('ping')
+    await DBclient.admin.command('ping')
     return "[+] Pinged your deployment. Successfully connected to MongoDB!"
   except Exception as e:
     return f"[-] ERROR! {sep}{sep}{sep}{e}"
 
-def get_user(user: voltage.User):
-  if user := userdb.find_one({"userid": user.id}):
+async def get_user(user: voltage.User):
+  if user := await userdb.find_one({"userid": user.id}):
     return user
   else:
     return "User not found."  
  
-def give_xp(user: voltage.User, xp:int):
-  userdb.bulk_write([
-    pymongo.UpdateOne(
+async def give_xp(user: voltage.User, xp:int):
+  await userdb.update_one(
       {"userid": user.id},
       {"$inc": {"levels.xp": xp}}
-    )
-  ])
+  )
 
 prefixes = ["m!"]
 client = commands.CommandsClient(prefix=get_prefix, help_command=HelpCommand)
@@ -309,20 +305,18 @@ RBList = RBL.RevoltBots(ApiKey=config['RBL_KEY'], botId="01FZB4GBHDVYY6KT8JH4RBX
 
 # USE THIS IF YOU NEED TO ADD NEW KEYS TO THE DATABASE
 async def do():
-  for user in userdb.find():
+  curs = userdb.find()
+  async for user in curs:
     ud = client.get_user(user['userid'])
-    userdb.bulk_write(
-      [
-        pymongo.UpdateOne(
-          {'userid':user['userid']}, 
-          {
-            '$set':{
-              "username": f"{ud.name}#{ud.discriminator}"
-            }
-          }
-        )
-    ])
-  print(f"Updated {userdb.count_documents({})} users!")
+    await userdb.update_one(
+      {'userid':user['userid']}, 
+      {
+        '$set':{
+          "username": f"{ud.name}#{ud.discriminator}"
+        }
+      }
+    )
+  print(f"Updated {(await userdb.count_documents({}))} users!")
 
 async def get():
   """ GET Stats """
@@ -355,7 +349,8 @@ def getVoter(user: voltage.User):
 async def update():
   print("Started Update Loop")
   while True:
-    for i in userdb.find():
+    documents = userdb.find()
+    async for i in documents:
       total = 0
       total += int(i["economy"]["wallet"]) 
       total += int(i["economy"]["bank"])
@@ -462,31 +457,31 @@ async def foo(ctx):
   await ctx.send(f"Not on cooldown, but now you are!{sep}Cooldown is `5` seconds!")
 
 async def oldlevelstuff(message): # running this in the on_message event drops the speed down to your grandmothers crawl. keep this in a function pls
-  if update_level(message.author):
+  if await update_level(message.author):
     try:
       channel = client.get_channel(config['LEVEL_CHANNEL'])
       embed = voltage.SendableEmbed(
         title = f"{message.author.name} has leveled up!",
-        description = f"{message.author.name} has leveled up to level **{get_user(message.author)['levels']['level']}**!",
+        description = f"{message.author.name} has leveled up to level **{await get_user(message.author)['levels']['level']}**!",
         color = "#44ff44",
         icon_url = message.author.avatar.url or "https://ibb.co/mcTxwnf"
       )
       await channel.send(embed=embed) # praise kink? its whatever
     except KeyError:
       print("keyerror :(") # this should never happen, if it does, tell William, if it doesnt, tell William anyways.
-  if userdb.find_one(
+  if (await userdb.find_one(
     {"userid":message.author.id}
-  ): #super fucking stupid but it makes pylance happy
-    update_level(message.author)
-    give_xp(message.author, random.randint(1, 5))
+  )): #super fucking stupid but it makes pylance happy
+    await update_level(message.author)
+    await give_xp(message.author, random.randint(1, 5))
   else: 
-    print(add_user(message))
+    print(await add_user(message))
 
 async def levelstuff(message):
   try:
     if message.content.startswith("<@01FZB4GBHDVYY6KT8JH4RBX4KR>"):
-      if userdb.find_one({"userid":message.author.id}):
-        prefix = userdb.find_one({"userid":message.author.id})['prefixes']
+      if await userdb.find_one({"userid":message.author.id}):
+        prefix = await userdb.find_one({"userid":message.author.id})['prefixes']
         if prefix == []:
           prefix = ["m!"]
         embed = voltage.SendableEmbed(
@@ -496,27 +491,27 @@ async def levelstuff(message):
         )
         await message.reply(embed=embed)
       else:
-        return print(add_user(message.author))
+        return print(await add_user(message.author))
   except:
     pass
-  if update_level(message.author):
+  if await update_level(message.author):
     try:
       channel = client.get_channel(config['LEVEL_CHANNEL'])
       embed = voltage.SendableEmbed(
         title = f"{message.author.name} has leveled up!",
-        description = f"{message.author.name} has leveled up to level **{get_user(message.author)['levels']['level']}**!",
+        description = f"{message.author.name} has leveled up to level **{await get_user(message.author)['levels']['level']}**!",
         color = "#44ff44",
         icon_url = message.author.avatar.url or "https://ibb.co/mcTxwnf"
       )
       await channel.send(embed=embed) # praise kink? its whatever
     except KeyError:
       print("LEVEL CHANNEL ISNT DEFINED OR USER DOESNT EXIST") # this should never happen, if it does, tell William, if it doesnt, tell William anyways.
-  elif userdb.find_one(
+  elif await userdb.find_one(
     {"userid":message.author.id}
   ):
-    if userdb.find_one({"userid":message.author.id})['levels']['lastmessage'] < time.time():
-      give_xp(message.author, random.randint(1,2))
-      update_level(message.author)
+    if (await userdb.find_one({"userid":message.author.id}))['levels']['lastmessage'] < time.time():
+      await give_xp(message.author, random.randint(1,2))
+      await update_level(message.author)
       userdb.update_one(
         {"userid":message.author.id},
         {
@@ -526,9 +521,9 @@ async def levelstuff(message):
         }
       )
     else:
-      return f"{message.author.name} is on cooldown for {userdb.find_one({'userid':message.author.id})['levels']['lastmessage'] - int(time.time()):.0f} seconds"
+      return f"{message.author.name} is on cooldown for {(await userdb.find_one({'userid':message.author.id}))['levels']['lastmessage'] - int(time.time()):.0f} seconds"
   else:
-    return add_user(message)
+    return await add_user(message)
 
 # Thank TheBobBobs, bro is a fucking goat for this.
 @client.listen("message")

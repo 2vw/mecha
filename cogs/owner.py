@@ -190,6 +190,18 @@ def setup(client) -> commands.Cog:
       await ctx.reply("Not owner, cant use this.")
 
   @owner.command()
+  async def reac(ctx):
+    def check(reaction, user):
+      return user == ctx.author and str(reaction.emoji) == '👍'
+
+    try:
+        reaction, user = await client.wait_for('reaction_add', timeout=60.0, check=check)
+    except asyncio.TimeoutError:
+        await ctx.send('👎')
+    else:
+        await ctx.send('👍')
+
+  @owner.command()
   async def aggregate(ctx):
     await ctx.send("done")
     
