@@ -438,24 +438,29 @@ See you in `{time}`!
     
     @utility.command()
     async def confirm(ctx):
+        embed = voltage.SendableEmbed(
+            title="Confirm!",
+            description="React with ✅ to confirm!",
+            colour="#516BF2",
+            icon_url=ctx.author.display_avatar.url
+        )
+        ms = await ctx.send(embed=embed, interactions={"reactions": ["✅"], "restrict_reactions": False})
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    url=f"https://api.revolt.chat/channels/{ctx.channel.id}/messages",
-                    headers={"x-bot-token": config['TOKEN']},
-                    json={
-                        "content": "Do you confirm?",
-                        "interactions": {
-                            "reactions": [
-                                "01HPX2NV8VVPYKFV0YYADQH33X"
-                            ]
-                        }
-                    }
-                ) as response:
-                    result = await response.json()
-            
-        except Exception as e:
-            return e
+            def check(message, user, reaction):
+                #print(message.id == ms.id)
+                #print(user == ctx.author.id)
+                #print(reaction == "✅")
+                return ms.id == message.id and user == ctx.author.id and reaction == "✅"
+            await client.wait_for("message_react", check=check, timeout=15.0)
+            embed = voltage.SendableEmbed(
+                title="Confirmed!",
+                description="You have confirmed!",
+                colour="#00FF00",
+                icon_url=ctx.author.display_avatar.url
+            )
+            return await ms.edit(embed=embed)
+        except asyncio.TimeoutError:
+            return await ctx.send("Confirmation timed out!")
     
     @utility.command(
         name="familyfriendly",

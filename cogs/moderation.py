@@ -72,6 +72,7 @@ def setup(client) -> commands.Cog:
                         headers={"x-bot-token": config['TOKEN']},
                         json={"ids": ids}
                     )
+                    await session.close()
                 embed = voltage.SendableEmbed(
                     description=f"# Purged!\nPurged {amount} messages in {round(time.time() - starttime, 2)}s!",
                     color="#00FF00",

@@ -499,7 +499,7 @@ def setup(client) -> commands.Cog:
     
     @eco.command(name="coinflip", aliases=['cf', 'coin', 'flip'], description="Flip a coin!")
     @limiter(7, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
-    async def coinflip(ctx, bet:int=None, choice:str=None):
+    async def coinflip(ctx, user:voltage.User=None, bet:int=None, choice:str=None):
         if not bet or bet < 0:
             return await ctx.reply("Please enter a valid bet!")
         else:
@@ -517,48 +517,144 @@ def setup(client) -> commands.Cog:
             )
             return await ctx.reply(embed=embed)
         elif (await userdb.find_one({"userid": ctx.author.id})):
-            embed = voltage.SendableEmbed(
-                title=ctx.author.display_name,
-                icon_url=ctx.author.display_avatar.url,
-                description=f"Flipping a coin for **\${bet:,}**... {sep}You now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']-bet:,}` in your wallet!",
-                colour="#00FF00",
-                media = "https://media.tenor.com/images/60b3d58b8161ad9b03675abf301e8fb4/tenor.gif"
-            )
-            msg = await ctx.reply(embed=embed)
-            await userdb.bulk_write([
-                pymongo.UpdateOne(
-                    {"userid": ctx.author.id},
-                    {"$inc": {"economy.wallet": -bet}}
-                )
-            ])
-            await asyncio.sleep(3)
-            if random.choice(['heads', 'tails']) == choice.lower():
-                await userdb.bulk_write([
-                    pymongo.UpdateOne(
-                        {"userid": ctx.author.id},
-                        {"$inc": {"economy.wallet": bet*2}}
-                    )
-                ])
+            if not user:
                 embed = voltage.SendableEmbed(
                     title=ctx.author.display_name,
                     icon_url=ctx.author.display_avatar.url,
-                    description=f"You won **\${bet:,}**! {sep}You now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']:,}` in your wallet!",
-                    colour="#00FF00"
+                    description=f"Flipping a coin for **\${bet:,}**... {sep}You now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']-bet:,}` in your wallet!",
+                    colour="#00FF00",
+                    media = "https://media.tenor.com/images/60b3d58b8161ad9b03675abf301e8fb4/tenor.gif"
                 )
-                return await msg.edit(embed=embed)
+                msg = await ctx.reply(embed=embed)
+                await userdb.bulk_write([
+                    pymongo.UpdateOne(
+                        {"userid": ctx.author.id},
+                        {"$inc": {"economy.wallet": -bet}}
+                    )
+                ])
+                await asyncio.sleep(3)
+                if random.choice(['heads', 'tails']) == choice.lower():
+                    await userdb.bulk_write([
+                        pymongo.UpdateOne(
+                            {"userid": ctx.author.id},
+                            {"$inc": {"economy.wallet": bet*2}}
+                        )
+                    ])
+                    embed = voltage.SendableEmbed(
+                        title=ctx.author.display_name,
+                        icon_url=ctx.author.display_avatar.url,
+                        description=f"You won **\${bet:,}**! {sep}You now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']:,}` in your wallet!",
+                        colour="#00FF00"
+                    )
+                    return await msg.edit(embed=embed)
+                else:
+                    embed = voltage.SendableEmbed(
+                        title=ctx.author.display_name,
+                        icon_url=ctx.author.display_avatar.url,
+                        description=f"You lost **\${bet:,}**! {sep}You now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']:,}` in your wallet!",
+                        colour="#FF0000"
+                    )
+                    return await msg.edit(embed=embed)
             else:
                 embed = voltage.SendableEmbed(
                     title=ctx.author.display_name,
                     icon_url=ctx.author.display_avatar.url,
-                    description=f"You lost **\${bet:,}**! {sep}You now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']:,}` in your wallet!",
-                    colour="#FF0000"
+                    description=f"{ctx.author.display_name}, challenges {user.display_name} to a coinflip for **\${bet:,}*! {sep}Do you confirm? (15 seconds)",
+                    colour="#00FF00"
                 )
-                return await msg.edit(embed=embed)
-    
+                await ctx.send(embed=embed, content=user.mention)
+                try:
+                    def check(msg):
+                        return msg.author.id == user.id
+                    msg = await client.wait_for("message", check=check, timeout=15)
+                    if msg.content.lower() in ["yes", "y", "yea", "yeah", "yup"]:
+                        if (await userdb.find_one({"userid": user.id})):
+                            udata = (await userdb.find_one({"userid": user.id}))
+                            if bet > udata["economy"]["wallet"]:
+                                embed = voltage.SendableEmbed(
+                                    title=ctx.author.display_name,
+                                    icon_url=ctx.author.display_avatar.url,
+                                    description=f"{user.display_name} doesn't have that much money in their wallet!{sep}*(lol poor fella)*",
+                                    colour="#FF0000"
+                                )
+                                return await ctx.reply(embed=embed)
+                            embed = voltage.SendableEmbed(
+                                title=ctx.author.display_name,
+                                icon_url=ctx.author.display_avatar.url,
+                                description=f"Flipping a coin for **\${bet:,}**... {sep}You now have `${(await userdb.find_one({'userid': user.id}))['economy']['wallet']-bet:,}` in your wallet!",
+                                media = "https://media.tenor.com/images/60b3d58b8161ad9b03675abf301e8fb4/tenor.gif",
+                                colour="#00FF00"
+                            )
+                            await userdb.bulk_write([
+                                pymongo.UpdateOne(
+                                    {"userid": user.id},
+                                    {"$inc": {"economy.wallet": -bet}}
+                                ),
+                                pymongo.UpdateOne(
+                                    {"userid": ctx.author.id},
+                                    {"$inc": {"economy.wallet": -bet}}
+                                )
+                            ])
+                            await ctx.reply(embed=embed, content=user.mention)
+                            if random.choice(['heads', 'tails']) == choice.lower():
+                                await userdb.bulk_write([
+                                    pymongo.UpdateOne(
+                                        {"userid": ctx.author.id},
+                                        {"$inc": {"economy.wallet": bet*2}}
+                                    )
+                                ])
+                                embed = voltage.SendableEmbed(
+                                    title=ctx.author.display_name,
+                                    icon_url=ctx.author.display_avatar.url,
+                                    description=f"{ctx.author.mention} won **\${bet:,}**! {sep}You now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']:,}` in your wallet!",
+                                    colour="#00FF00"
+                                )
+                                return await ctx.reply(embed=embed)
+                            else:
+                                await userdb.bulk_write([
+                                    pymongo.UpdateOne(
+                                        {"userid": user.id},
+                                        {"$inc": {"economy.wallet": bet*2}}
+                                    )
+                                ])
+                                embed = voltage.SendableEmbed(
+                                    title=ctx.author.display_name,
+                                    icon_url=ctx.author.display_avatar.url,
+                                    description=f"{user.mention} won **\${bet:,}**! {sep}They now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']:,}` in their wallet!",
+                                    colour="#00FF00"
+                                )
+                                return await msg.reply(embed=embed)
+                        else:
+                            embed = voltage.SendableEmbed(
+                                title=ctx.author.display_name,
+                                icon_url=ctx.author.display_avatar.url,
+                                description=f"{user.display_name} doesn't exist! {sep}You now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']:,}` in your wallet!",
+                                colour="#FF0000"
+                            )
+                            await ctx.reply(embed=embed)
+                    elif msg.content.lower() in ["no", "n", "nah", "nope"]:
+                        embed = voltage.SendableEmbed(
+                            title=ctx.author.display_name,
+                            icon_url=ctx.author.display_avatar.url,
+                            description=f"Looks like {user.display_name} doesn't want to play with you. {sep}You now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']:,}` in your wallet!",
+                            colour="#FF0000"
+                        )
+                        return await ctx.reply(embed=embed)
+                    else:
+                        await ctx.send(msg.content)
+                except asyncio.TimeoutError:
+                    embed = voltage.SendableEmbed(
+                        title=ctx.author.display_name,
+                        icon_url=ctx.author.display_avatar.url,
+                        description=f"{user.display_name} didn't respond in time! {sep}You now have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']:,}` in your wallet!",
+                        colour="#FF0000"
+                    )
+                    return await ctx.reply(embed=embed)
+        
     @eco.command(name="blackjack", aliases=["bj"], description="Play a game of blackjack!")
     @limiter(7, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def blackjack(ctx, bet:int=None):
-        if not bet or not str(bet).is_integer() or bet < 0:
+        if not bet or bet < 0:
             return await ctx.reply("Please enter a valid bet!")
         elif bet > (await userdb.find_one({"userid": ctx.author.id}))["economy"]["wallet"]:
             embed = voltage.SendableEmbed(

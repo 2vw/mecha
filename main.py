@@ -138,7 +138,7 @@ import time
 """for i in await userdb.find({}):
   userdb.bulk_write(
     [
-      motor.UpdateOne(
+      pymongo.UpdateOne(
         {'userid':i['userid']}, 
         {'$set':{'notifications.inbox': {
           "1":{
@@ -166,11 +166,11 @@ async def update_level(user:voltage.User):
       for i in user_data['notifications']['inbox']:
         o += 1
       await userdb.bulk_write([
-        motor.UpdateOne({'userid':user.id}, {'$inc':{'levels.level':1}}),
-        motor.UpdateOne({'userid':user.id}, {'$set':{'levels.xp':0}}),
-        motor.UpdateOne({'userid':user.id}, {'$inc':{'levels.totalxp':xp}}),
-        motor.UpdateOne({'userid':user.id}, {'$inc':{'economy.bank':100 * lvl + amt}}),
-        motor.UpdateOne({'userid':user.id}, {
+        pymongo.UpdateOne({'userid':user.id}, {'$inc':{'levels.level':1}}),
+        pymongo.UpdateOne({'userid':user.id}, {'$set':{'levels.xp':0}}),
+        pymongo.UpdateOne({'userid':user.id}, {'$inc':{'levels.totalxp':xp}}),
+        pymongo.UpdateOne({'userid':user.id}, {'$inc':{'economy.bank':100 * lvl + amt}}),
+        pymongo.UpdateOne({'userid':user.id}, {
           '$set':{
             f'notifications.inbox.{i}':{
               "message":f"Congratulations on leveling up to level {lvl+1}!{sep}You've recieved {100 * lvl + amt} coins as a reward!",
@@ -201,7 +201,7 @@ async def add_user(user: voltage.User, isbot:bool=False): # long ass fucking fun
     return "User already exists."
   try:
     await userdb.insert_one({
-        "_id": userdb.count_documents({}) + 1,
+        "_id": (await userdb.count_documents({}) + 1),
         "username": user.name,
         "userid": user.id,
         "levels": {
@@ -295,7 +295,7 @@ async def pingDB(): # ping the database; never gonna use this, might need it, ad
     return f"[-] ERROR! {sep}{sep}{sep}{e}"
 
 async def get_user(user: voltage.User):
-  if user := await userdb.find_one({"userid": user.id}):
+  if user := (await userdb.find_one({"userid": user.id})):
     return user
   else:
     return "User not found."  
@@ -315,15 +315,19 @@ RBList = RBL.RevoltBots(ApiKey=config['RBL_KEY'], botId="01FZB4GBHDVYY6KT8JH4RBX
 async def do():
   curs = userdb.find()
   async for user in curs:
-    ud = client.get_user(user['userid'])
-    await userdb.update_one(
-      {'userid':user['userid']}, 
-      {
-        '$set':{
-          "username": f"{ud.name}#{ud.discriminator}"
+    try:
+      ud = client.get_user(user['userid'])
+
+      await userdb.update_one(
+        {'userid':user['userid']}, 
+        {
+          '$set':{
+            "username": f"{ud.name}#{ud.discriminator}"
+          }
         }
-      }
-    )
+      )
+    except:
+      pass
   print(f"Updated {(await userdb.count_documents({}))} users!")
 
 async def get():
@@ -430,6 +434,7 @@ async def status():
       f"ccccccuthdkhugjktlcfvrhvtrdkgrfcikeekdvtfdrn | {len(client.cache.servers)} servers",
       f"Gaming rn, talk later? | {len(client.cache.servers)} servers",
       f"saul goodman | {len(client.cache.servers)} servers",
+      f"Max was here | {len(client.cache.servers)} servers",
       ]
     status = random.choice(statuses)
     await client.set_status(status, voltage.PresenceType.online)
@@ -448,11 +453,18 @@ async def stayon():
     i += 1
     
 
+
 @client.listen("ready")
 async def ready():
   post()
   print("Up and running") # Prints when the client is ready. You should know this
-  await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status(), stayon(), do())
+  with open("json/data.json", "r") as f:
+    data = json.load(f)
+  if time.time() - data['uptime'] > 3600:
+    print("Back online! Starting up again!")
+    
+  print(f"Connected to {len(client.servers)} servers and {len(client.users)} users!")
+  await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status(), do())
 
 @client.command()
 @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
@@ -465,7 +477,7 @@ async def oldlevelstuff(message): # running this in the on_message event drops t
       channel = client.get_channel(config['LEVEL_CHANNEL'])
       embed = voltage.SendableEmbed(
         title = f"{message.author.name} has leveled up!",
-        description = f"{message.author.name} has leveled up to level **{await get_user(message.author)['levels']['level']}**!",
+        description = f"{message.author.name} has leveled up to level **{(await get_user(message.author))['levels']['level']}**!",
         color = "#44ff44",
         icon_url = message.author.avatar.url or "https://ibb.co/mcTxwnf"
       )
@@ -480,11 +492,17 @@ async def oldlevelstuff(message): # running this in the on_message event drops t
   else: 
     print(await add_user(message))
 
+async def loggingstuff(message):
+  if message.server.id == message.author.id:
+    return
+  else:
+    return await add_user(message.author)
+
 async def levelstuff(message):
   try:
     if message.content.startswith("<@01FZB4GBHDVYY6KT8JH4RBX4KR>"):
-      if await userdb.find_one({"userid":message.author.id}):
-        prefix = await userdb.find_one({"userid":message.author.id})['prefixes']
+      if (await userdb.find_one({"userid":message.author.id})) is not None:
+        prefix = (await userdb.find_one({"userid":message.author.id}))['prefixes']
         if prefix == []:
           prefix = ["m!"]
         embed = voltage.SendableEmbed(
@@ -502,7 +520,7 @@ async def levelstuff(message):
       channel = client.get_channel(config['LEVEL_CHANNEL'])
       embed = voltage.SendableEmbed(
         title = f"{message.author.name} has leveled up!",
-        description = f"{message.author.name} has leveled up to level **{await get_user(message.author)['levels']['level']}**!",
+        description = f"{message.author.name} has leveled up to level **{(await get_user(message.author))['levels']['level']}**!",
         color = "#44ff44",
         icon_url = message.author.avatar.url or "https://ibb.co/mcTxwnf"
       )
@@ -526,7 +544,7 @@ async def levelstuff(message):
     else:
       return f"{message.author.name} is on cooldown for {(await userdb.find_one({'userid':message.author.id}))['levels']['lastmessage'] - int(time.time()):.0f} seconds"
   else:
-    return await add_user(message)
+    return (await add_user(message))
 
 # Thank TheBobBobs, bro is a fucking goat for this.
 @client.listen("message")
@@ -536,7 +554,24 @@ async def on_message(message):
   if message.channel.id == message.author.id:
     return
   asyncio.create_task(levelstuff(message)) # pièce de résistance
+  asyncio.create_task(loggingstuff(message))
   await client.handle_commands(message) # so everything else doesnt trip over its clumsy ass selves."
+
+@client.listen("message_react")
+async def on_message_react(message, user, reaction):
+  with open("json/data.json", "r") as f:
+    data = json.load(f)
+  if message.channel.id == message.author.id:
+    return
+  elif message.id == data['BETA_ID'] and reaction == "👍" and user != message.author.id:
+      return await message.reply(f"👍 | You've just joined the beta club, <@{user}>!", delete_after=5)
+
+@client.listen("message_unreact")
+async def on_message_unreact(message, user, reaction):
+  if message.channel.id == message.author.id:
+    return
+  elif message.id == data['BETA_ID'] and reaction == "👍" and user != message.author.id:
+      return await message.reply(f"👍 | You've just left the beta club, <@{user}>!", delete_after=5)
 
 @client.listen("server_added")
 async def server_added(message):
@@ -552,7 +587,7 @@ async def server_added(message):
 async def add(ctx, user:voltage.User=None):
   if user is None:
     user = ctx.author
-  result = add_user(user)
+  result = (await add_user(user))
   await ctx.reply(f"Results are in! {result}")
 
 errormsg = [

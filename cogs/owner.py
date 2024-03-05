@@ -1,4 +1,4 @@
-import voltage, asyncio, random, time, psutil, pymongo, json, datetime, io, contextlib, requests, string, os, sys, pilcord
+import voltage, asyncio, random, time, psutil, pymongo, json, datetime, io, contextlib, requests, string, os, sys, pilcord, motor
 from bson.son import SON
 from voltage.ext import commands
 from pymongo.mongo_client import MongoClient
@@ -7,7 +7,7 @@ from pymongo.server_api import ServerApi
 with open("json/config.json", "r") as f:
     config = json.load(f)
 
-DBclient = MongoClient(config["MONGOURI"])
+DBclient = motor.motor_asyncio.AsyncIOMotorClient(config['MONGOURI'])
 
 db = DBclient["beta"]
 userdb = db["users"]
@@ -228,7 +228,7 @@ def setup(client) -> commands.Cog:
   @owner.command()
   async def apu(ctx, user:voltage.User, *, prefix:str):
     if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
-      userdb.update_one({
+      await userdb.update_one({
         "userid": user.id
       }, {
         "$push": {
@@ -242,7 +242,7 @@ def setup(client) -> commands.Cog:
   @owner.command()
   async def dpu(ctx, user:voltage.User, *, prefix:str):
     if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
-      userdb.update_one({
+      await userdb.update_one({
         "userid": user.id
       }, {
         "$pull": {
@@ -278,7 +278,7 @@ def setup(client) -> commands.Cog:
         )
         return await ctx.send(embed=embed)
       elif get_badge(badge):
-        userdb.update_one(
+        await userdb.update_one(
           {
             "userid": user.id
           },
@@ -302,7 +302,7 @@ def setup(client) -> commands.Cog:
         )
         await ctx.send(embed=embed)
       elif get_badge(badge):
-        userdb.update_one(
+        await userdb.update_one(
           {
             "userid": user.id
           },
@@ -320,7 +320,7 @@ def setup(client) -> commands.Cog:
   async def give(ctx, user:voltage.User, amount:int):
     if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
       i = 1
-      for _ in userdb.find_one({"userid": user.id})["notifications"]["inbox"]:
+      for _ in (await userdb.find_one({"userid": user.id}))["notifications"]["inbox"]:
         i += 1
       userdb.bulk_write([
         pymongo.UpdateOne(
@@ -340,9 +340,9 @@ def setup(client) -> commands.Cog:
           {
             "$set": {
               f"notifications.inbox.{str(i)}": {
-                "message":f"You've recieved {amount:,} coins as per compensation for being affected by a bug! Use `m!balance` to check your balance.",
+                "message":f"You've recieved {amount:,}!",
                 "date": time.time(),
-                "title": "You've been affected by a bug!",
+                "title": "You've been given some coins!",
                 "type": "admin",
                 "read": False
               }
@@ -354,5 +354,21 @@ def setup(client) -> commands.Cog:
     else:
       await ctx.reply("Not owner, cant use this.")
 
+  @owner.command()
+  async def betamsg(ctx):
+    if ctx.author.id == "01FZB2QAPRVT8PVMF11480GRCD":
+      embed = voltage.SendableEmbed(
+        title="Beta Message",
+        description="React with **👍** to enable beta testing!",
+        colour="#FF0000"
+      )
+      msg = await ctx.send(embed=embed, interactions={"reactions":['👍'], "restrict_reactions": True})
+      with open("json/data.json", "r") as f:
+        data = json.load(f)
+      data["BETA_ID"] = str(msg.id)
+      with open("json/data.json", "w") as f:
+        json.dump(data, f, indent=2)
+    else:
+      await ctx.reply("Not owner, cant use this.")
     
   return owner
