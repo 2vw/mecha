@@ -463,7 +463,7 @@ def setup(client) -> commands.Cog:
                         embed = voltage.SendableEmbed(
                             title=ctx.author.display_name,
                             icon_url=ctx.author.display_avatar.url,
-                            description=f"You deposited **all** your money into your bank account! {sep}You have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['bank']:,}` in your bank account!",
+                            description=f"You deposited **all** your money into your bank account! {sep}You have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']:,}` in your wallet!",
                             color="#00FF00",
                         )
                         await ctx.reply(embed=embed)
@@ -499,7 +499,7 @@ def setup(client) -> commands.Cog:
     
     @eco.command(name="coinflip", aliases=['cf', 'coin', 'flip'], description="Flip a coin!")
     @limiter(7, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
-    async def coinflip(ctx, user:voltage.User=None, bet:int=None, choice:str=None):
+    async def coinflip(ctx, bet:int=None, choice:str=None, user:voltage.User=None):
         if not bet or bet < 0:
             return await ctx.reply("Please enter a valid bet!")
         else:
