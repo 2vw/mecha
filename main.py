@@ -135,28 +135,25 @@ cooldowns = db['cooldowns']
 
 import time
 
-"""for i in await userdb.find({}):
-  userdb.bulk_write(
-    [
-      pymongo.UpdateOne(
-        {'userid':i['userid']}, 
-        {'$set':{'notifications.inbox': {
-          "1":{
-            "message": f"Welcome to Mecha, {i['username']}!{sep}To get started, type `m!help` in this server to get started!",
-            "date": time.time(),
-            "title": "Welcome To Mecha!",
-            "type": "bot",
-            "read": False
+async def upd():
+  for i in (await userdb.find({})):
+    userdb.bulk_write(
+      [
+        pymongo.UpdateOne(
+          {'userid':i['userid']}, 
+          {'$set':
+            {
+              "status.afk": {}
+            }
           }
-        }}}
-      ),
-    ]
-  )
-  print(f"Updated {i['username']}!")
-"""
+        ),
+      ]
+    )
+    print(f"Updated {i['username']}!")
+
 
 async def update_level(user:voltage.User):
-  if await userdb.find_one({'userid':user.id}):
+  if (await userdb.find_one({'userid':user.id})):
     user_data = await userdb.find_one({'userid':user.id})
     lvl = user_data['levels']['level']
     xp = user_data['levels']['xp']
@@ -302,8 +299,8 @@ async def get_user(user: voltage.User):
  
 async def give_xp(user: voltage.User, xp:int):
   await userdb.update_one(
-      {"userid": user.id},
-      {"$inc": {"levels.xp": xp}}
+    {"userid": user.id},
+    {"$inc": {"levels.xp": xp}}
   )
 
 prefixes = ["m!"]
@@ -451,8 +448,31 @@ async def stayon():
     await channel.send(embed=embed)
     await asyncio.sleep(60*60)
     i += 1
-    
 
+async def afkCheck(message):
+  try:
+    if (await userdb.find_one({"userid": message.author.id})):
+      if (await userdb.find_one({"userid": message.author.id}))['status']['afk'][message.server.id]['afk']:
+        if (await userdb.find_one({"userid": message.author.id}))['status']['afk'][message.server.id]['lastseen'] + 2 < int(time.time()):
+          await userdb.update_one(
+            {"userid": message.author.id}, 
+            {"$set": {"status.afk.{}".format(message.server.id): {"afk": False}}}
+          )
+          embed = voltage.SendableEmbed(
+            title="AFK!",
+            description=f"Welcome back, {message.author.mention}!{sep}I've removed your AFK status!",
+            colour="#00ff00",
+            icon_url=message.author.avatar.url
+          )
+          await message.reply(embed=embed, delete_after=5)
+        else:
+          return "TooEarly"
+      else:
+        return "NotAfk"
+    else:
+      return "DoesntExist"
+  except:
+    return
 
 @client.listen("ready")
 async def ready():
@@ -554,6 +574,7 @@ async def on_message(message):
   if message.channel.id == message.author.id:
     return
   asyncio.create_task(levelstuff(message)) # pièce de résistance
+  asyncio.create_task(afkCheck(message))
   asyncio.create_task(loggingstuff(message))
   await client.handle_commands(message) # so everything else doesnt trip over its clumsy ass selves."
 

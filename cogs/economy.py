@@ -419,7 +419,7 @@ def setup(client) -> commands.Cog:
     async def richest(ctx):
         lb = []
         count = 0
-        d = userdb.find().sort([("levels.totalxp", pymongo.DESCENDING)]).limit(10)
+        d = userdb.find().sort([("economy.total", pymongo.DESCENDING)]).limit(10)
         for doc in (await d.to_list(length=10)):
             total = doc['economy']['wallet'] + doc['economy']['bank']
             count += 1

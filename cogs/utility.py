@@ -348,8 +348,8 @@ See you in `{time}`!
         description="Get your personal line of prefixes!",
     )
     async def prefixes(ctx):
-        if userdb.find_one({'userid':ctx.author.id}):
-            prefixes = userdb.find_one({'userid':ctx.author.id})['prefixes']
+        if (await userdb.find_one({'userid':ctx.author.id})):
+            prefixes = (await userdb.find_one({'userid':ctx.author.id}))['prefixes']
             embed = voltage.SendableEmbed(
                 title="Your prefixes!",
                 description=f"Your prefixes are:{sep} ```{sep}{f'{sep}'.join(prefixes)}{sep}```",
@@ -365,14 +365,14 @@ See you in `{time}`!
         description="Add a prefix to your personal line of prefixes!",
     )
     async def addprefix(ctx, *, prefix):
-        if userdb.find_one({'userid':ctx.author.id}):
+        if (await userdb.find_one({'userid':ctx.author.id})):
             if prefix[0] == " ":
                 return await ctx.send("Prefix cannot start with a space!")
-            elif any(x in prefix for x in userdb.find_one({'userid':ctx.author.id})['prefixes']):
+            elif any(x in prefix for x in (await userdb.find_one({'userid':ctx.author.id}))['prefixes']):
                 return await ctx.send("This prefix is already in your list of prefixes!")
             else:
-                userdb.update_one({'userid':ctx.author.id}, {'$push':{'prefixes':prefix}})
-                prefixes = userdb.find_one({'userid':ctx.author.id})['prefixes']
+                await userdb.update_one({'userid':ctx.author.id}, {'$push':{'prefixes':prefix}})
+                prefixes = (await userdb.find_one({'userid':ctx.author.id}))['prefixes']
                 embed = voltage.SendableEmbed(
                     title="Added a new prefix to your list!",
                     description=f"Added `{prefix}` to your list of {len(prefixes)}!{sep}To see your prefixes, type `m!prefixes` or alternatively; mention me!",
@@ -388,10 +388,10 @@ See you in `{time}`!
         description="Remove a prefix from your personal line of prefixes!",
     )
     async def removeprefix(ctx, *, prefix):
-        if userdb.find_one({'userid':ctx.author.id}):
+        if (await userdb.find_one({'userid':ctx.author.id})):
             if len((await userdb.find_one({'userid':ctx.author.id})['prefixes'])) > 1 :
                 if prefix in (await userdb.find_one({'userid':ctx.author.id}))['prefixes']:
-                    userdb.update_one({'userid':ctx.author.id}, {'$pull':{'prefixes':prefix}})
+                    await userdb.update_one({'userid':ctx.author.id}, {'$pull':{'prefixes':prefix}})
                     prefixes = (await userdb.find_one({'userid':ctx.author.id}))['prefixes']
                     embed = voltage.SendableEmbed(
                         title="Removed a prefix from your list!",
@@ -505,6 +505,39 @@ See you in `{time}`!
                     color="#00FF00",
                 )
                 await ctx.send(content="[]()", embed=embed)
+        else:
+            embed = voltage.SendableEmbed(
+                title=ctx.author.display_name,
+                icon_url=ctx.author.display_avatar.url,
+                description="Please create an account with `m!add`!",
+                color="#dc3545",
+            )
+            await ctx.reply(embed=embed)
+    
+    @utility.command(name="afk", description="Set your AFK status!", aliases=["awayfromkeyboard", 'brb'])
+    async def afk(ctx, *, reason: str = None):
+        if (await userdb.find_one({'userid': ctx.author.id})):
+            await userdb.update_one(
+                {
+                    'userid': ctx.author.id
+                },
+                {
+                    '$set': {
+                        f'status.afk.{ctx.server.id}': {
+                            f'reason': reason,
+                            f'lastseen': int(time.time()),
+                            f'afk': True
+                        }
+                    }
+                }
+            )
+            embed = voltage.SendableEmbed(
+                title=ctx.author.display_name,
+                icon_url=ctx.author.display_avatar.url,
+                description=f"Set your AFK status to:{sep}{reason}",
+                color="#00FF00"
+            )
+            await ctx.reply(embed=embed)
         else:
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
