@@ -889,7 +889,45 @@ def setup(client) -> commands.Cog:
         else:
             await create_account(ctx)
 
-    @eco.command(name="daily", aliases=["dailies"], description="Claim your daily reward! (5,000 - 15,000 coins!)")
+    @eco.command(name="monthly", description="Claim your monthly reward! (50,000 - 150,000 coins!)")
+    async def monthly(ctx):
+        if (await userdb.find_one({"userid": ctx.author.id})):
+            if time.time() < (await userdb.find_one({"userid": ctx.author.id}))["economy"]["monthly"]:
+                elapsed_time = int(time.time() - (await userdb.find_one({"userid": ctx.author.id}))['economy']['monthly'])
+                days, remainder = divmod(elapsed_time, 86400)
+                hours, remainder = divmod(remainder, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                description = f"{str(days)+'d ' if days > 0 else ''}{str(hours) + 'h ' if hours > 0 else ''}{str(minutes) + 'm ' if minutes > 0 else ''}{seconds}s"
+                embed = voltage.SendableEmbed(
+                    title=ctx.author.display_name,
+                    icon_url=ctx.author.display_avatar.url,
+                    description=f"Please wait {description} before claiming your monthly reward!",
+                    color="#dc3545"
+                )
+                return await ctx.reply(embed=embed)
+            else:
+                amount = random.randint(50000, 150000)
+                await userdb.bulk_write([
+                    pymongo.UpdateOne(
+                        {"userid": ctx.author.id},
+                        {"$set": {"economy.monthly": time.time() + 2592000}}
+                    ),
+                    pymongo.UpdateOne(
+                        {"userid": ctx.author.id},
+                        {"$inc": {"economy.wallet": amount}}
+                    )
+                ])
+                embed = voltage.SendableEmbed(
+                    title=ctx.author.display_name,
+                    icon_url=ctx.author.display_avatar.url,
+                    description=f"You have claimed your monthly reward! {sep}You have received `${amount:,}`!",
+                    color="#00FF00"
+                )
+                return await ctx.reply(embed=embed)
+        else:
+            await create_account(ctx)
+
+    @eco.command(name="daily", aliases=["dailies", 'dr', 'claimdaily'], description="Claim your daily reward! (5,000 - 15,000 coins!)")
     async def daily(ctx):
         if (await userdb.find_one({"userid": ctx.author.id})):
             if time.time() < (await userdb.find_one({"userid": ctx.author.id}))["economy"]["daily"]:
