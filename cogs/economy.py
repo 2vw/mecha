@@ -999,24 +999,17 @@ Golden Egg - `5000`
             return await ctx.reply(embed=embed)
 
         emojis = {  # The emojis and their values
-            "🗑️": (0, 0.05),  # Trash can
-            "🍎": (1, 0.08),  # Apple
-            "🍊": (4, 0.01),  # Orange
-            "🍇": (8, 0.03),  # Grapes
-            "🍓": (2, 0.06),  # Strawberry
-            "🍒": (5, 0.04),  # Cherry
-            "7️⃣": (100, 0.005),  # 7
+            "🍎": 1,  # Apple
+            "🍊": 4,  # Orange
+            "🍇": 8,  # Grapes
+            "🍓": 2,  # Strawberry
+            "🍒": 5,  # Cherry
+            "7️⃣": 25,  # 7
         }
 
-        a = random.choice([x for x, (y, z) in emojis.items() if random.uniform(0, 1) < z])
-        if random.uniform(0, 1) < 0.95:
-            b = a
-        else:
-            b = random.choice([x for x, (y, z) in emojis.items() if random.uniform(0, 1) < z])
-        if random.uniform(0, 1) < 0.99:
-            c = b
-        else:
-            c = random.choice([x for x, (y, z) in emojis.items() if random.uniform(0, 1) < z])
+        a = random.choice(list(emojis.keys()))
+        b = random.choice(list(emojis.keys()))
+        c = random.choice(list(emojis.keys()))
 
         embed = voltage.SendableEmbed(
             title=ctx.author.display_name,
