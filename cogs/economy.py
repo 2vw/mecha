@@ -890,9 +890,21 @@ def setup(client) -> commands.Cog:
             await create_account(ctx)
 
     @eco.command(name="daily", aliases=["dailies"], description="Claim your daily reward! (5,000 - 15,000 coins!)")
-    @limiter(86400, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), '{hours}h {minutes}m {seconds}s')}`!"))
     async def daily(ctx):
         if (await userdb.find_one({"userid": ctx.author.id})):
+            if time.time() < (await userdb.find_one({"userid": ctx.author.id}))["economy"]["daily"]:
+                elapsed_time = int(time.time() - (await userdb.find_one({"userid": ctx.author.id}))['economy']['daily'])
+                days, remainder = divmod(elapsed_time, 86400)
+                hours, remainder = divmod(remainder, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                description = f"{str(days)+'d ' if days > 0 else ''}{str(hours) + 'h ' if hours > 0 else ''}{str(minutes) + 'm ' if minutes > 0 else ''}{seconds}s"
+                embed = voltage.SendableEmbed(
+                    title=ctx.author.display_name,
+                    icon_url=ctx.author.display_avatar.url,
+                    description=f"You already claimed your daily reward today!{sep}Come back in `{description}`!",
+                    color="#dc3545"
+                )
+                return await ctx.reply(embed=embed)
             amount = random.randint(5000, 15000)
             await userdb.bulk_write(
                 [
@@ -999,12 +1011,19 @@ Golden Egg - `5000`
             return await ctx.reply(embed=embed)
 
         emojis = {  # The emojis and their values
+            "🗑️": 0,  # Trash Can
             "🍎": 1,  # Apple
             "🍊": 4,  # Orange
             "🍇": 8,  # Grapes
             "🍓": 2,  # Strawberry
             "🍒": 5,  # Cherry
-            "7️⃣": 25,  # 7
+            "🍉": 7,  # Watermelon
+            "🍌": 10, # Banana
+            "🥝": 12, # Kiwi
+            "🍋": 15, # Lemon
+            "🍈": 18, # Plum
+            "🍅": 20, # Tomato
+            "7️⃣": 50,  # 7
         }
 
         a = random.choice(list(emojis.keys()))
