@@ -310,22 +310,24 @@ RBList = RBL.RevoltBots(ApiKey=config['RBL_KEY'], botId="01FZB4GBHDVYY6KT8JH4RBX
 
 # USE THIS IF YOU NEED TO ADD NEW KEYS TO THE DATABASE
 async def do():
-  curs = userdb.find()
-  async for user in curs:
-    try:
-      ud = client.get_user(user['userid'])
+  while True:
+    curs = userdb.find()
+    async for user in curs:
+      try:
+        ud = client.get_user(user['userid'])
 
-      await userdb.update_one(
-        {'userid':user['userid']}, 
-        {
-          '$set':{
-            "username": f"{ud.name}#{ud.discriminator}"
+        await userdb.update_one(
+          {'userid':user['userid']}, 
+          {
+            '$set':{
+              "username": f"{ud.name}#{ud.discriminator}"
+            }
           }
-        }
-      )
-    except:
-      pass
-  print(f"Updated {(await userdb.count_documents({}))} users!")
+        )
+      except:
+        pass
+    print(f"Updated {(await userdb.count_documents({}))} users!")
+    await asyncio.sleep(60*60)
 
 async def get():
   """ GET Stats """
