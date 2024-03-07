@@ -933,6 +933,7 @@ def setup(client) -> commands.Cog:
         
 
     @eco.command(aliases=["sh", "buy"], description="Buy items from the shop!", name="shop")
+    @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), '{seconds}s')}`!"))
     async def shop(ctx, item:str=None):
         if not item:
             embed = voltage.SendableEmbed(
@@ -984,5 +985,102 @@ Golden Egg - `5000`
                     await buy_item(ctx, "Playboy", 1000)
             else:
                 await create_account(ctx)
+
+    async def slots_game(ctx, amount: int):
+        user = await userdb.find_one({"userid": ctx.author.id})
+        await userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -amount}})
+        if user["economy"]["wallet"] < amount:
+            embed = voltage.SendableEmbed(
+                title=ctx.author.display_name,
+                icon_url=ctx.author.display_avatar.url,
+                description=f"You don't have enough money to bet {amount:,}!",
+                colour="#FF0000"
+            )
+            return await ctx.reply(embed=embed)
+
+        emojis = {  # The emojis and their values
+            "🍎": 1,  # Apple
+            "🍊": 4,  # Orange
+            "🍇": 8,  # Grapes
+            "🍓": 2,  # Strawberry
+            "🍒": 5,  # Cherry
+            "7️⃣": 100,  # 7
+        }
+
+        a = random.choice(list(emojis.keys()))
+        b = random.choice(list(emojis.keys()))
+        c = random.choice(list(emojis.keys()))
+
+        embed = voltage.SendableEmbed(
+            title=ctx.author.display_name,
+            icon_url=ctx.author.display_avatar.url,
+            description=f"You bet {amount:,}...{sep}{sep} | **{a}** | **{b}** | **{c}** |",
+            colour="#FFD700"
+        )
+        msg = await ctx.reply(embed=embed)
+        prize = 0
+        if a == b == c == "7️⃣":
+            prize = 25_000_000
+        else:
+            if a == b:
+                prize = emojis.get(a, 0) * 2 * amount
+            elif a == c:
+                prize = emojis.get(a, 0) * amount
+            elif b == c:
+                prize = emojis.get(b, 0) * amount
+        if prize == 0:
+            embed = voltage.SendableEmbed(
+                title=ctx.author.display_name,
+                icon_url=ctx.author.display_avatar.url,
+                description=f"You lost! {sep}{sep} | **{a}** | **{b}** | **{c}** |",
+                colour="#FF0000"
+            )
+            return await msg.edit(embed=embed)
+        embed = voltage.SendableEmbed(
+            title=ctx.author.display_name,
+            icon_url=ctx.author.display_avatar.url,
+            description=f"**x{round(prize / amount)}!**{sep}You won `{prize:,}`!{sep}{sep} | **{a}** | **{b}** | **{c}** |",
+            colour="#198754"
+        )
+        await msg.edit(embed=embed)
+        await userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": prize}})
+
+
+    @eco.command(
+        name="slots",
+        aliases=["bet", "slts"],
+        description="Bet on the slots machine!",
+    )
+    @limiter(30, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), '{seconds}s')}`!"))
+    async def slots(ctx, amount:int=None):
+        if (await userdb.find_one({"userid": ctx.author.id})):
+            if amount:
+                if amount <= 0:
+                    embed = voltage.SendableEmbed(
+                        title=ctx.author.display_name,
+                        icon_url=ctx.author.display_avatar.url,
+                        description=f"You can't bet a negative amount!",
+                        colour="#FF0000"
+                    )
+                    return await ctx.reply(embed=embed)
+                elif amount > 100_000_000:
+                    embed = voltage.SendableEmbed(
+                        title=ctx.author.display_name,
+                        icon_url=ctx.author.display_avatar.url,
+                        description=f"You can't bet more than 100,000,000 coins!",
+                        colour="#FF0000"
+                    )
+                    return await ctx.reply(embed=embed)
+                elif amount > (await userdb.find_one({"userid": ctx.author.id}))["economy"]["wallet"]:
+                    embed = voltage.SendableEmbed(
+                        title=ctx.author.display_name,
+                        icon_url=ctx.author.display_avatar.url,
+                        description=f"You don't have enough money to bet {amount:,}!",
+                        colour="#FF0000"
+                    )
+                    return await ctx.reply(embed=embed)
+            await slots_game(ctx, amount)
+        else:
+            await create_account(ctx)
 
     return eco
