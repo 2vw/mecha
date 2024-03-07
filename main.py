@@ -195,20 +195,21 @@ cooldowns = db['cooldowns']
 import time
 
 async def upd():
-  for i in (await userdb.find({})):
-    userdb.bulk_write(
-      [
-        pymongo.UpdateOne(
-          {'userid':i['userid']}, 
-          {'$set':
-            {
-              "status.afk": {}
+    doc = await userdb.find({}).to_list(length=None)
+    for i in doc:
+        await userdb.bulk_write(
+        [
+            pymongo.UpdateOne(
+            {'userid':i['userid']}, 
+            {'$set':
+                {
+                "economy.monthly": time.time()
+                }
             }
-          }
-        ),
-      ]
-    )
-    print(f"Updated {i['username']}!")
+            ),
+        ]
+        )
+        print(f"Updated {i['username']}!")
 
 
 async def update_level(user:voltage.User):
@@ -271,6 +272,8 @@ async def add_user(user: voltage.User, isbot:bool=False): # long ass fucking fun
             "wallet": 0,
             "bank": 0,
             "total": 0,
+            "daily": time.time(),
+            "monthly": time.time(),
             "data": {
                 "inventory": {
                     "Bank Loan": 1
@@ -307,7 +310,8 @@ async def add_user(user: voltage.User, isbot:bool=False): # long ass fucking fun
             "beta": False,
             "familyfriendly": False,
             "isBot": isbot,
-            "banned": False
+            "banned": False,
+            "afk": {}
         }
     })
     return "Added"

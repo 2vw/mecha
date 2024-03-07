@@ -91,6 +91,8 @@ async def add_user(user: voltage.User, isbot:bool=False): # long ass fucking fun
             "wallet": 0,
             "bank": 0,
             "total": 0,
+            "daily": time.time(),
+            "monthly": time.time(),
             "data": {
                 "inventory": {
                     "Bank Loan": 1
@@ -127,7 +129,8 @@ async def add_user(user: voltage.User, isbot:bool=False): # long ass fucking fun
             "beta": False,
             "familyfriendly": False,
             "isBot": isbot,
-            "banned": False
+            "banned": False,
+            "afk": {}
         }
     })
     return "Added"
@@ -892,16 +895,16 @@ def setup(client) -> commands.Cog:
     @eco.command(name="monthly", description="Claim your monthly reward! (50,000 - 150,000 coins!)")
     async def monthly(ctx):
         if (await userdb.find_one({"userid": ctx.author.id})):
+            print((await userdb.find_one({"userid": ctx.author.id}))["economy"]["monthly"], time.time())
             if time.time() < (await userdb.find_one({"userid": ctx.author.id}))["economy"]["monthly"]:
-                elapsed_time = int(time.time() - (await userdb.find_one({"userid": ctx.author.id}))['economy']['monthly'])
+                elapsed_time = int((await userdb.find_one({"userid": ctx.author.id}))['economy']['monthly'] - time.time())
                 days, remainder = divmod(elapsed_time, 86400)
                 hours, remainder = divmod(remainder, 3600)
                 minutes, seconds = divmod(remainder, 60)
-                description = f"{str(days)+'d ' if days > 0 else ''}{str(hours) + 'h ' if hours > 0 else ''}{str(minutes) + 'm ' if minutes > 0 else ''}{seconds}s"
                 embed = voltage.SendableEmbed(
                     title=ctx.author.display_name,
                     icon_url=ctx.author.display_avatar.url,
-                    description=f"Please wait {description} before claiming your monthly reward!",
+                    description=f"Please wait `{str(days)+'d ' if days > 0 else ''}{str(hours) + 'h ' if hours > 0 else ''}{str(minutes) + 'm ' if minutes > 0 else ''}{str(seconds) + 's' if seconds > 0 else ''}` before claiming your monthly reward!",
                     color="#dc3545"
                 )
                 return await ctx.reply(embed=embed)
@@ -931,15 +934,14 @@ def setup(client) -> commands.Cog:
     async def daily(ctx):
         if (await userdb.find_one({"userid": ctx.author.id})):
             if time.time() < (await userdb.find_one({"userid": ctx.author.id}))["economy"]["daily"]:
-                elapsed_time = int(time.time() - (await userdb.find_one({"userid": ctx.author.id}))['economy']['daily'])
+                elapsed_time = int((await userdb.find_one({"userid": ctx.author.id}))['economy']['daily'] - time.time())
                 days, remainder = divmod(elapsed_time, 86400)
                 hours, remainder = divmod(remainder, 3600)
                 minutes, seconds = divmod(remainder, 60)
-                description = f"{str(days)+'d ' if days > 0 else ''}{str(hours) + 'h ' if hours > 0 else ''}{str(minutes) + 'm ' if minutes > 0 else ''}{seconds}s"
                 embed = voltage.SendableEmbed(
                     title=ctx.author.display_name,
                     icon_url=ctx.author.display_avatar.url,
-                    description=f"You already claimed your daily reward today!{sep}Come back in `{description}`!",
+                    description=f"You already claimed your daily reward today!{sep}Come back in `{str(days)+'d ' if days > 0 else ''}{str(hours) + 'h ' if hours > 0 else ''}{str(minutes) + 'm ' if minutes > 0 else ''}{str(seconds) + 's' if seconds > 0 else ''}`!",
                     color="#dc3545"
                 )
                 return await ctx.reply(embed=embed)
