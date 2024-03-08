@@ -168,3 +168,4 @@ cython_debug/
 /json/config.json
 /asd.txt
 /user_ids.txt
+/ad.py
