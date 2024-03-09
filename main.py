@@ -34,7 +34,7 @@ curl -X PATCH -H "X-Session-Token: $token" -d "{ \"id:\": \"$roleid\", \"colour\
 
 """
 
-import random, motor, pymongo,  json, time, asyncio, datetime, requests, pilcord
+import random, motor, pymongo, json, time, asyncio, datetime, requests, pilcord
 import voltage, os
 from voltage.ext import commands
 from voltage.errors import CommandNotFound, NotBotOwner, NotEnoughArgs, NotEnoughPerms, NotFoundException, BotNotEnoughPerms, RoleNotFound, UserNotFound, MemberNotFound, ChannelNotFound, HTTPError 
@@ -345,7 +345,6 @@ async def update_stats(users, servers):
         "servers": servers
       }
     )
-  print("Updated stats! Users: " + str(users) + " Servers: " + str(servers))
 
 async def pingDB(): # ping the database; never gonna use this, might need it, add it.
   try:
@@ -389,7 +388,6 @@ async def do():
         )
       except:
         pass
-    print(f"Updated {(await userdb.count_documents({}))} users!")
     await asyncio.sleep(60*60)
 
 async def get():

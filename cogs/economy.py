@@ -137,6 +137,79 @@ async def add_user(user: voltage.User, isbot:bool=False): # long ass fucking fun
   except Exception as e:
     return f"Sorry, An Error Occured!{sep}{sep}```{sep}{e}{sep}```"
 
+
+async def parse_amount(ctx, amount, bank=False):
+    user = (await userdb.find_one({"userid": ctx.author.id}))
+    if bank:
+        econ = user["economy"]["bank"]
+        try:
+            if "%" in amount:
+                if float(amount.replace("%", "")) > 100 and float(amount.replace("%", "")) <= 0:
+                    embed = voltage.SendableEmbed(
+                        description="You can only withdraw up to 100%!",
+                        color="#FF0000",
+                        title="Error"
+                    )
+                    return await ctx.reply(embed=embed)
+                return econ * (float(amount.replace("%", "")) / 100)
+            elif "k" in amount.lower() or "thousand" in amount.lower():
+                return 1000 * int(amount.replace("k", "").replace("thousand", "").replace(" ", ""))
+            elif "m" in amount.lower() or "mil" in amount.lower() or "million" in amount.lower():
+                return 1000000 * int(amount.replace("m", "").replace("mil", "").replace("million", "").replace(" ", ""))
+            else:
+                return int(amount.replace(" ", ""))
+        except ValueError:
+            print(f"Error parsing amount: {amount}")
+            embed = voltage.SendableEmbed(
+                description="Invalid amount!",
+                color="#FF0000",
+                title="Error"
+            )
+            await ctx.reply(embed=embed)
+            return None
+
+    user = await userdb.find_one({"userid": ctx.author.id})
+    try:
+        suffixes = {
+            'k': 1000,
+            'thousand': 1000,
+            'm': 1000000,
+            "mil": 1000000,
+            "million": 1000000,
+            'h': 100,
+            'hundred': 100,
+            'hundredthousand': 100000,
+            'th': 100000
+        }
+        if "%" in amount:
+            if float(amount.replace("%", "")) > 100 and float(amount.replace("%", "")) <= 0:
+                embed = voltage.SendableEmbed(
+                    description="You can only withdraw up to 100%!",
+                    color="#FF0000",
+                    title="Error"
+                )
+                return await ctx.reply(embed=embed)
+            return user['economy']['wallet'] * (float(amount.replace("%", "")) / 100)
+        elif amount.lower() in ["a", "all", "everything", "max"]:
+            amount = user["economy"]["wallet"]
+            return amount
+        for suffix, multiplier in suffixes.items():
+            if suffix in amount.lower():
+                amount = int(amount.replace(suffix, '')) * multiplier
+                break
+        else:
+            amount = int(amount)
+            return amount
+    except ValueError:
+        embed = voltage.SendableEmbed(
+            description="Amount must be an integer or use k, m, h, or th suffixes for thousand, million, hundred, or hundred thousand respectively!",
+            color="#FF0000",
+            title="Error"
+        )
+        await ctx.reply(embed=embed)
+        return None
+
+
 async def buy_item(ctx, item:str, price:int): # this sucks but it works
     if (await userdb.find_one({"userid": ctx.author.id})):
         userdata = (await userdb.find_one({"userid": ctx.author.id}))
@@ -218,7 +291,7 @@ def setup(client) -> commands.Cog:
                 items = []
             if len(items) == 0:
                 items = ["You have no items :boohoo:"]
-            embed = voltage.SendableEmbed(title=f"{user.name}'s balance", icon_url=user.display_avatar.url, description=f"**Wallet Balance:**{sep}> \${userdata['economy']['wallet']:,}{sep}{sep}**Bank Balance:**{sep}> \${userdata['economy']['bank']:,}{sep}**Inventory:**{sep}> {f'{sep}> '.join(itemstuff)}", colour="#516BF2")
+            embed = voltage.SendableEmbed(title=f"{user.name}'s balance", icon_url=user.display_avatar.url, description=f"**Wallet Balance:**{sep}> \${round(userdata['economy']['wallet'], 2):,}{sep}{sep}**Bank Balance:**{sep}> \${round(userdata['economy']['bank'], 2):,}{sep}**Inventory:**{sep}> {f'{sep}> '.join(itemstuff)}", colour="#516BF2")
             await ctx.send(embed=embed)
         else:
             await ctx.send(
@@ -377,7 +450,7 @@ def setup(client) -> commands.Cog:
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
                 icon_url=ctx.author.display_avatar.url,
-                description=f"{random.choice(people)} gave you `{amount:,}` coins! Now get a job you bum.",
+                description=f"{random.choice(people)} gave you `{round(amount, 2):,}` coins! Now get a job you bum.",
                 color="#00FF00",
             )
             await userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": amount}})
@@ -429,17 +502,17 @@ def setup(client) -> commands.Cog:
             if count <= 3:
                 emoji = ["0", "🥇", "🥈", "🥉"]
                 if len(doc['username']) <= 10:
-                    lb.append(f"{'#' * count} **{emoji[count]}** {doc['username']}{sep}#### **\${total:,}**")
+                    lb.append(f"{'#' * count} **{emoji[count]}** {doc['username']}{sep}#### **\${round(total):,}**")
                 elif len(doc['username']) > 10 and count == 1:
-                    lb.append(f"{'###' * count} **{emoji[count]}** {doc['username']}{sep}#### **\${total:,}**")
+                    lb.append(f"{'###' * count} **{emoji[count]}** {doc['username']}{sep}#### **\${round(total):,}**")
                 elif count == 3 and len(doc['username']) < 20:
-                    lb.append(f"{'#' * count} **{emoji[count]}** {doc['username']}{sep}#### **\${total:,}**")
+                    lb.append(f"{'#' * count} **{emoji[count]}** {doc['username']}{sep}#### **\${round(total):,}**")
                 else:
-                    lb.append(f"{'#' * count + '#'} **{emoji[count]}** {doc['username']}{sep}#### **\${total:,}**")
+                    lb.append(f"{'#' * count + '#'} **{emoji[count]}** {doc['username']}{sep}#### **\${round(total):,}**")
             elif count == 4:
-                lb.append(f"**#4** -> {doc['username']}: {total:,}")
+                lb.append(f"**#4** -> {doc['username']}: {round(total):,}")
             else:
-                lb.append(f"**#{count}** -> {doc['username']}: {total:,}")
+                lb.append(f"**#{count}** -> {doc['username']}: {round(total):,}")
         embed = voltage.SendableEmbed(
             title = "View the Leaderboard (UPDATES EVERY 2 MINUTES!)",
             description='\n'.join(lb),
@@ -451,48 +524,42 @@ def setup(client) -> commands.Cog:
 
     @eco.command(description="Move money into your bank account!", name="deposit", aliases=['dep', 'tobank', 'dp', 'd'])
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
-    async def deposit(ctx, amount):
+    async def deposit(ctx, *, amount: str):
         if (await userdb.find_one({"userid": ctx.author.id})):
-            userdata = (await userdb.find_one({"userid": ctx.author.id}))["economy"]["wallet"]
-            if userdata > 0:
-                if not amount.isdigit():
-                    if any(x in amount.lower() for x in ["all", 'max', 'everything', 'maximum', 'a']):
-                        await userdb.bulk_write([
-                            pymongo.UpdateOne(
-                                {"userid": ctx.author.id},
-                                {"$inc": {"economy.wallet": -userdata, "economy.bank": userdata}}
-                            )
-                        ])
-                        embed = voltage.SendableEmbed(
-                            title=ctx.author.display_name,
-                            icon_url=ctx.author.display_avatar.url,
-                            description=f"You deposited **all** your money into your bank account! {sep}You have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['wallet']:,}` in your wallet!",
-                            color="#00FF00",
-                        )
-                        await ctx.reply(embed=embed)
-                elif int(amount) < userdata:
-                    await userdb.bulk_write([
-                        pymongo.UpdateOne(
-                            {"userid": ctx.author.id},
-                            {"$inc": {"economy.wallet": -int(amount), "economy.bank": int(amount)}}
-                        )
-                    ])
-                    amt = int(amount)
-                    embed = voltage.SendableEmbed(
-                        title=ctx.author.display_name,
-                        icon_url=ctx.author.display_avatar.url,
-                        description=f"You deposited `${amt:,}` into your bank account! {sep}You have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['bank']:,}` in your bank account!",
-                        color="#00FF00",
-                    )
-                    await ctx.reply(embed=embed)
-                else:
-                    await ctx.reply("You're trying to deposit more than you have in your wallet!")
-            else:
+            amt = await parse_amount(ctx, amount, False)
+            if amt is None:
                 embed = voltage.SendableEmbed(
                     title=ctx.author.display_name,
                     icon_url=ctx.author.display_avatar.url,
                     description="Please enter a valid amount!",
                     color="#FF0000",
+                )
+                await ctx.reply(embed=embed)
+                return
+            userdata = (await userdb.find_one({"userid": ctx.author.id}))["economy"]["wallet"]
+            if userdata > 0:
+                if amt > userdata:
+                    await ctx.reply("You're trying to deposit more than you have in your wallet!")
+                    return
+                await userdb.bulk_write([
+                    pymongo.UpdateOne(
+                        {"userid": ctx.author.id},
+                        {"$inc": {"economy.wallet": -amt, "economy.bank": amt}}
+                    )
+                ])
+                embed = voltage.SendableEmbed(
+                    title=ctx.author.display_name,
+                    icon_url=ctx.author.display_avatar.url,
+                    description=f"You deposited `${amt:,}` into your bank account! {sep}You have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['bank']:,}` in your bank account!",
+                    color="#00FF00",
+                )
+                await ctx.reply(embed=embed)
+            else:
+                embed = voltage.SendableEmbed(
+                    title=ctx.author.display_name,
+                    icon_url=ctx.author.display_avatar.url,
+                    description="Please enter a valid amount!",
+                    color="#FF0000"
                 )
                 await ctx.reply(embed=embed)
         else:
@@ -656,9 +723,16 @@ def setup(client) -> commands.Cog:
         
     @eco.command(name="blackjack", aliases=["bj"], description="Play a game of blackjack!")
     @limiter(7, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
-    async def blackjack(ctx, bet:int=None):
-        if not bet or bet < 0:
-            return await ctx.reply("Please enter a valid bet!")
+    async def blackjack(ctx, *, bet:str):
+        bet = await parse_amount(ctx, bet)
+        if bet is None or bet <= 0:
+            embed = voltage.SendableEmbed(
+                title=ctx.author.display_name,
+                icon_url=ctx.author.display_avatar.url,
+                description=f"Please specify a valid bet!{sep}**Usage:** `{ctx.prefix}bj <bet>`",
+                colour="#FF0000"
+            )
+            return await ctx.reply(embed=embed)
         elif bet > (await userdb.find_one({"userid": ctx.author.id}))["economy"]["wallet"]:
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
@@ -788,10 +862,11 @@ def setup(client) -> commands.Cog:
    
     @eco.command(description="Pay another user from your wallet!", name="pay", aliases=['transfer', 'sendmoney'])
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
-    async def pay(ctx, member:voltage.User, amount:int):
-        if not str(amount).isdigit():
+    async def pay(ctx, member:voltage.User, amount:str):
+        parsed_amount = await parse_amount(ctx, amount)
+        if parsed_amount is None:
             return await ctx.reply("Please enter a valid amount!")
-        if amount <= 0:
+        if parsed_amount <= 0:
             embed = voltage.SendableEmbed(
                 title="Error!",
                 description="Please enter a positive amount to pay.",
@@ -816,7 +891,7 @@ def setup(client) -> commands.Cog:
                     pymongo.UpdateOne({"userid": member.id}, {"$inc": {"economy.wallet": -amount}}),
                     pymongo.UpdateOne({"userid": member.id}, {"$append": {"notifications.inbox": {
                         "title": f"Payment from {ctx.author.display_name}",
-                        "message": f"{ctx.author.display_name} paid you {amount:,} coins!",
+                        "message": f"{ctx.author.display_name} paid you {round(amount, 2):,} coins!",
                         "date": time.time(),
                         "read": False,
                         "type": "member"
@@ -824,7 +899,7 @@ def setup(client) -> commands.Cog:
                 ])
                 embed = voltage.SendableEmbed(
                     title="Success!",
-                    description=f"You have successfully paid {amount:,} to {member.display_name}.",
+                    description=f"You have successfully paid {round(amount, 2):,} to {member.display_name}.",
                     colour="#198754"
                 )
                 await ctx.reply(embed=embed)
@@ -845,42 +920,24 @@ def setup(client) -> commands.Cog:
     
     @eco.command(description="Move money back into your wallet!", name="withdraw", aliases=['with', 'towallet', 'wd', 'w'])
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
-    async def withdraw(ctx, amount):
+    async def withdraw(ctx, *, amount):
         if (await userdb.find_one({"userid": ctx.author.id})):
-            userdata = (await userdb.find_one({"userid": ctx.author.id}))["economy"]["bank"]
-            if userdata > 0:
-                if not amount.isdigit():
-                    if any(x in amount.lower() for x in ["all", 'max', 'everything', 'maximum', 'a']):
-                        await userdb.bulk_write([
-                            pymongo.UpdateOne(
-                                {"userid": ctx.author.id},
-                                {"$inc": {"economy.wallet": userdata, "economy.bank": -userdata}}
-                            )
-                        ])
-                        embed = voltage.SendableEmbed(
-                            title=ctx.author.display_name,
-                            icon_url=ctx.author.display_avatar.url,
-                            description=f"You withdrew **all** the money from your bank account! {sep}You have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['bank']:,}` in your bank account!",
-                            color="#198754",
-                        )
-                        await ctx.reply(embed=embed)
-                elif int(amount) < userdata:
-                    userdb.bulk_write([
-                        pymongo.UpdateOne(
-                            {"userid": ctx.author.id},
-                            {"$inc": {"economy.wallet": int(amount), "economy.bank": -int(amount)}}
-                        )
-                    ])
-                    amt = int(amount)
-                    embed = voltage.SendableEmbed(
-                        title=ctx.author.display_name,
-                        icon_url=ctx.author.display_avatar.url,
-                        description=f"You withdrew `${amt:,}` from your bank account! {sep}You have `${(await userdb.find_one({'userid': ctx.author.id}))['economy']['bank']:,}` in your bank account!",
-                        color="#00FF00",
+            userdata = await parse_amount(ctx, amount, True)
+            if userdata >= 0:
+                await userdb.bulk_write([
+                    pymongo.UpdateOne(
+                        {"userid": ctx.author.id},
+                        {"$inc": {"economy.wallet": userdata, "economy.bank": -userdata}}
                     )
-                    await ctx.reply(embed=embed)
-                else:
-                    await ctx.reply("You're trying to deposit more than you have in your bank!")
+                ])
+                amt = userdata
+                embed = voltage.SendableEmbed(
+                    title=ctx.author.display_name,
+                    icon_url=ctx.author.display_avatar.url,
+                    description=f"You withdrew `${round(amt, 2):,}` from your bank account! {sep}You have `${round((await userdb.find_one({'userid': ctx.author.id}))['economy']['bank'], 2):,}` in your bank account!",
+                    color="#00FF00",
+                )
+                await ctx.reply(embed=embed)
             else:
                 embed = voltage.SendableEmbed(
                     title=ctx.author.display_name,
@@ -895,7 +952,6 @@ def setup(client) -> commands.Cog:
     @eco.command(name="monthly", description="Claim your monthly reward! (50,000 - 150,000 coins!)")
     async def monthly(ctx):
         if (await userdb.find_one({"userid": ctx.author.id})):
-            print((await userdb.find_one({"userid": ctx.author.id}))["economy"]["monthly"], time.time())
             if time.time() < (await userdb.find_one({"userid": ctx.author.id}))["economy"]["monthly"]:
                 elapsed_time = int((await userdb.find_one({"userid": ctx.author.id}))['economy']['monthly'] - time.time())
                 days, remainder = divmod(elapsed_time, 86400)
@@ -1039,70 +1095,81 @@ Golden Egg - `5000`
                 await create_account(ctx)
 
     async def slots_game(ctx, amount: int):
-        user = await userdb.find_one({"userid": ctx.author.id})
-        await userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -amount}})
-        if user["economy"]["wallet"] < amount:
+        if (await userdb.find_one({"userid": ctx.author.id})):
+            user = await userdb.find_one({"userid": ctx.author.id})
+            await userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -amount}})
+            if user["economy"]["wallet"] < amount:
+                embed = voltage.SendableEmbed(
+                    title=ctx.author.display_name,
+                    icon_url=ctx.author.display_avatar.url,
+                    description=f"You don't have enough money to bet {amount:,}!",
+                    colour="#FF0000"
+                )
+                return await ctx.reply(embed=embed)
+            elif amount < 100:
+                embed = voltage.SendableEmbed(
+                    title=ctx.author.display_name,
+                    icon_url=ctx.author.display_avatar.url,
+                    description="You can't bet less than 100 coins!",
+                    colour="#FF0000"
+                )
+                return await ctx.reply(embed=embed)
+
+            emojis = {  # The emojis and their values
+                "🗑️": 0,  # Trash Can
+                "🍎": 1,  # Apple
+                "🍊": 4,  # Orange
+                "🍇": 8,  # Grapes
+                "🍓": 2,  # Strawberry
+                "🍒": 5,  # Cherry
+                "🍉": 7,  # Watermelon
+                "🍌": 10, # Banana
+                "🥝": 12, # Kiwi
+                "🍋": 15, # Lemon
+                "🍈": 18, # Plum
+                "🍅": 20, # Tomato
+                "7️⃣": 50,  # 7
+            }
+
+            a = random.choice(list(emojis.keys()))
+            b = random.choice(list(emojis.keys()))
+            c = random.choice(list(emojis.keys()))
+
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
                 icon_url=ctx.author.display_avatar.url,
-                description=f"You don't have enough money to bet {amount:,}!",
-                colour="#FF0000"
+                description=f"You bet {amount:,}...{sep}{sep} | **{a}** | **{b}** | **{c}** |",
+                colour="#FFD700"
             )
-            return await ctx.reply(embed=embed)
-
-        emojis = {  # The emojis and their values
-            "🗑️": 0,  # Trash Can
-            "🍎": 1,  # Apple
-            "🍊": 4,  # Orange
-            "🍇": 8,  # Grapes
-            "🍓": 2,  # Strawberry
-            "🍒": 5,  # Cherry
-            "🍉": 7,  # Watermelon
-            "🍌": 10, # Banana
-            "🥝": 12, # Kiwi
-            "🍋": 15, # Lemon
-            "🍈": 18, # Plum
-            "🍅": 20, # Tomato
-            "7️⃣": 50,  # 7
-        }
-
-        a = random.choice(list(emojis.keys()))
-        b = random.choice(list(emojis.keys()))
-        c = random.choice(list(emojis.keys()))
-
-        embed = voltage.SendableEmbed(
-            title=ctx.author.display_name,
-            icon_url=ctx.author.display_avatar.url,
-            description=f"You bet {amount:,}...{sep}{sep} | **{a}** | **{b}** | **{c}** |",
-            colour="#FFD700"
-        )
-        msg = await ctx.reply(embed=embed)
-        prize = 0
-        if a == b == c == "7️⃣":
-            prize = 25_000_000
+            msg = await ctx.reply(embed=embed)
+            prize = 0
+            if a == b == c == "7️⃣":
+                prize = 25_000_000
+            else:
+                if a == b:
+                    prize = emojis.get(a, 0) * 2 * amount
+                elif a == c:
+                    prize = emojis.get(a, 0) * amount
+                elif b == c:
+                    prize = emojis.get(b, 0) * amount
+            if prize == 0:
+                embed = voltage.SendableEmbed(
+                    title=ctx.author.display_name,
+                    icon_url=ctx.author.display_avatar.url,
+                    description=f"You lost! {sep}{sep} | **{a}** | **{b}** | **{c}** |",
+                    colour="#FF0000"
+                )
+                return await msg.edit(embed=embed)
+            embed = voltage.SendableEmbed(
+                title=ctx.author.display_name,
+                icon_url=ctx.author.display_avatar.url,
+                description=f"**x{round(prize / amount)}!**{sep}You won `{prize:,}`!{sep}{sep} | **{a}** | **{b}** | **{c}** |",
+                colour="#198754"
+            )
+            await msg.edit(embed=embed)
+            await userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": prize}})
         else:
-            if a == b:
-                prize = emojis.get(a, 0) * 2 * amount
-            elif a == c:
-                prize = emojis.get(a, 0) * amount
-            elif b == c:
-                prize = emojis.get(b, 0) * amount
-        if prize == 0:
-            embed = voltage.SendableEmbed(
-                title=ctx.author.display_name,
-                icon_url=ctx.author.display_avatar.url,
-                description=f"You lost! {sep}{sep} | **{a}** | **{b}** | **{c}** |",
-                colour="#FF0000"
-            )
-            return await msg.edit(embed=embed)
-        embed = voltage.SendableEmbed(
-            title=ctx.author.display_name,
-            icon_url=ctx.author.display_avatar.url,
-            description=f"**x{round(prize / amount)}!**{sep}You won `{prize:,}`!{sep}{sep} | **{a}** | **{b}** | **{c}** |",
-            colour="#198754"
-        )
-        await msg.edit(embed=embed)
-        await userdb.update_one({"userid": ctx.author.id}, {"$inc": {"economy.wallet": prize}})
+            await create_account(ctx)
 
 
     @eco.command(
@@ -1111,35 +1178,27 @@ Golden Egg - `5000`
         description="Bet on the slots machine!",
     )
     @limiter(30, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), '{seconds}s')}`!"))
-    async def slots(ctx, amount:int=None):
-        if (await userdb.find_one({"userid": ctx.author.id})):
-            if amount:
-                if amount <= 0:
-                    embed = voltage.SendableEmbed(
-                        title=ctx.author.display_name,
-                        icon_url=ctx.author.display_avatar.url,
-                        description=f"You can't bet a negative amount!",
-                        colour="#FF0000"
-                    )
-                    return await ctx.reply(embed=embed)
-                elif amount > 100_000_000:
-                    embed = voltage.SendableEmbed(
-                        title=ctx.author.display_name,
-                        icon_url=ctx.author.display_avatar.url,
-                        description=f"You can't bet more than 100,000,000 coins!",
-                        colour="#FF0000"
-                    )
-                    return await ctx.reply(embed=embed)
-                elif amount > (await userdb.find_one({"userid": ctx.author.id}))["economy"]["wallet"]:
-                    embed = voltage.SendableEmbed(
-                        title=ctx.author.display_name,
-                        icon_url=ctx.author.display_avatar.url,
-                        description=f"You don't have enough money to bet {amount:,}!",
-                        colour="#FF0000"
-                    )
-                    return await ctx.reply(embed=embed)
-            await slots_game(ctx, amount)
-        else:
+    async def slots(ctx, amount: str = None):
+        parsed_amount = await parse_amount(ctx, amount)
+
+        if parsed_amount is None:
+            return await ctx.reply(
+                "Invalid amount specified. Please specify an amount like `100` or `1k` or `1m`"
+            )
+
+        if parsed_amount > 100_000_000:
+            return await ctx.reply(
+                "You can't bet more than 100,000,000 coins!"
+            )
+
+        if parsed_amount > (await userdb.find_one({"userid": ctx.author.id}))["economy"]["wallet"]:
+            return await ctx.reply(
+                f"You don't have enough money to bet {parsed_amount:,}!"
+            )
+
+        await slots_game(ctx, parsed_amount)
+
+        if (await userdb.find_one({"userid": ctx.author.id})) is None:
             await create_account(ctx)
 
     return eco
