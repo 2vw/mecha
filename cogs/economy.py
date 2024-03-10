@@ -1178,7 +1178,7 @@ Golden Egg - `5000`
         description="Bet on the slots machine!",
     )
     @limiter(30, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), '{seconds}s')}`!"))
-    async def slots(ctx, amount: str = None):
+    async def slots(ctx, amount: str):
         parsed_amount = await parse_amount(ctx, amount)
 
         if parsed_amount is None:
