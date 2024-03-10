@@ -69,15 +69,18 @@ class HelpCommand(commands.HelpCommand):
   async def send_help(self, ctx: commands.CommandContext):
     embed = voltage.SendableEmbed(
       title="Help",
-      description=f"Use `{ctx.prefix}help <command>` to get more informtion on a command.",
+      description=f"Use `{ctx.prefix}help <command>` to get more information on a command.",
       colour="#516BF2",
       icon_url=ctx.author.display_avatar.url
     )
     text = ""
     for i in self.client.cogs.values():
-      text += f"{sep}### **{i.name}**{sep}{i.description}{sep}"
-      for j in i.commands:
-        text += f"{sep}> {j.name}"
+      if i.name.lower() == "owner" or i.name.lower() == "giveaway":
+        pass
+      else:
+        text += f"{sep}### **{i.name}**{sep}{i.description}{sep}"
+        for j in i.commands:
+          text += f"`{j.name}` "
     if embed.description:
       embed.description += text
     return await ctx.reply(embed=embed)
@@ -638,7 +641,8 @@ async def on_message(message):
     return
   asyncio.create_task(levelstuff(message)) # pièce de résistance
   asyncio.create_task(afkCheck(message))
-  asyncio.create_task(loggingstuff(message))
+  if message.server.id != message.author.id:
+    asyncio.create_task(loggingstuff(message))
   await client.handle_commands(message) # so everything else doesnt trip over its clumsy ass selves."
 
 @client.listen("message_react")
