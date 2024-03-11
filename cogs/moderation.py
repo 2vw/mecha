@@ -36,13 +36,17 @@ def setup(client) -> commands.Cog:
     @limiter(20, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def nickname(ctx, member: voltage.User, *, nick:str):
         if ctx.author.permissions.manage_nicknames or ctx.author.id == ctx.server.owner.id:
-            async with aiohttp.ClientSession() as s:
-                await s.patch(
-                    url=f"https://api.revolt.chat/servers/{ctx.server.id}/members/{member.id}",
-                    headers={"x-bot-token": config['TOKEN']},
-                    json={"nickname": nick}
-                )
-                await s.close()
+            try:
+                async with aiohttp.ClientSession() as s:
+                    await s.patch(
+                        url=f"https://api.revolt.chat/servers/{ctx.server.id}/members/{member.id}",
+                        headers={"x-bot-token": config['TOKEN']},
+                        json={"nickname": nick},
+                        timeout=10
+                    )
+                    await s.close()
+            except aiohttp.ClientTimeout:
+                return
             embed = voltage.SendableEmbed(
                 title="Nickname",
                 description=f"Changed {member.display_name}'s nickname to `{nick}`!",

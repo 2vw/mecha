@@ -389,7 +389,7 @@ See you in `{time}`!
     )
     async def removeprefix(ctx, *, prefix):
         if (await userdb.find_one({'userid':ctx.author.id})):
-            if len((await userdb.find_one({'userid':ctx.author.id})['prefixes'])) > 1 :
+            if len((await userdb.find_one({'userid':ctx.author.id}))['prefixes']) > 1 :
                 if prefix in (await userdb.find_one({'userid':ctx.author.id}))['prefixes']:
                     await userdb.update_one({'userid':ctx.author.id}, {'$pull':{'prefixes':prefix}})
                     prefixes = (await userdb.find_one({'userid':ctx.author.id}))['prefixes']
