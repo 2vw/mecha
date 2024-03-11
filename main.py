@@ -641,7 +641,7 @@ async def on_message(message):
     return
   asyncio.create_task(levelstuff(message)) # pièce de résistance
   asyncio.create_task(afkCheck(message))
-  if message.server.id != message.author.id:
+  if message:
     asyncio.create_task(loggingstuff(message))
   await client.handle_commands(message) # so everything else doesnt trip over its clumsy ass selves."
 
@@ -656,6 +656,8 @@ async def on_message_react(message, user, reaction):
 
 @client.listen("message_unreact")
 async def on_message_unreact(message, user, reaction):
+  with open("json/data.json", "r") as f:
+    data = json.load(f)
   if message.channel.id == message.author.id:
     return
   elif message.id == data['BETA_ID'] and reaction == "👍" and user != message.author.id:
@@ -691,6 +693,20 @@ errormsg = [
   "An Error Occured!"
 ]
 
+import sys
+import logging
+import traceback
+
+# log uncaught exceptions
+def log_exceptions(type, value, tb):
+  for line in traceback.TracebackException(type, value, tb).format(chain=True):
+    logging.exception(line)
+  logging.exception(value)
+
+  sys.__excepthook__(type, value, tb) # calls default excepthook
+
+sys.excepthook = log_exceptions
+
 # error handling shit
 @client.error("message")
 async def on_message_error(error: Exception, message):
@@ -704,7 +720,7 @@ async def on_message_error(error: Exception, message):
   elif isinstance(error, NotEnoughArgs):
     embed = voltage.SendableEmbed(
       title=random.choice(errormsg),
-      description="YOU'RE MISSING ARGS!\n{}".format(error),
+      description="You're missing an argument!\n{}".format(error),
       colour="#516BF2"
     )
     return await message.reply(message.author.mention, embed=embed)
