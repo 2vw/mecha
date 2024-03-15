@@ -210,19 +210,21 @@ async def parse_amount(ctx, amount, bank=False):
         return None
 
 
-async def buy_item(ctx, item:str, price:int): # this sucks but it works
+async def buy_item(ctx, item:str, price:int, amount:int): # this sucks but it works
     if (await userdb.find_one({"userid": ctx.author.id})):
+        if amount < 1:
+            return await ctx.reply("Amount must be greater than 0!")
         userdata = (await userdb.find_one({"userid": ctx.author.id}))
         if userdata['economy']['wallet'] < price:
             return await ctx.reply("You don't have enough money to purchase this!")
         if item in userdata['economy']['data']['inventory']:
             await userdb.bulk_write([
                 pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -price}}),
-                pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {f"economy.data.inventory.{item.lower()}": 1}})
+                pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {f"economy.data.inventory.{item.lower()}": amount}})
             ])
         else:
             await userdb.bulk_write([
-                pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {f"economy.data.inventory.{item.lower()}": 1}}),
+                pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {f"economy.data.inventory.{item.lower()}": amount}}),
                 pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -price}})
             ])
         return await ctx.reply(f"You bought **{item.capitalize()}** for **{price}** coins!")
@@ -310,9 +312,10 @@ def setup(client) -> commands.Cog:
     async def beg(ctx):
         amount = random.randint(1, 250)
         people = [
-            "Jan From Revolt",
+            "Lea From Revolt",
             "ks",
             "Cesiyi",
+            "css",
             "Fatal From Revolt",
             "Delta2571",
             "Rick Astley",
@@ -374,7 +377,6 @@ def setup(client) -> commands.Cog:
             "Flo from Progressive",
             "That tiktok star that shows a little too much butt",
             "Sir Cole Jerkin",
-            "T series",
             "Jennifer Lopez",
             "Barack Obama",
             "Cersei Lannister",
@@ -388,10 +390,10 @@ def setup(client) -> commands.Cog:
             "Mr. Beast",
             "Annoying Ass Clown",
             "That lion from the kids movie that vaguely resembles the story of Jesus Christ",
-            "That imposter who was too scared to murder you just because he didn't want to look sus",
             "TikTok Moron",
             "Alotta Fagina",
             "Joe",
+            "Max",
         ]
         badline = [
             "be gone",
@@ -434,7 +436,7 @@ def setup(client) -> commands.Cog:
         percentage = random.randint(1, 100)
         if not (await userdb.find_one({"userid": ctx.author.id})):
             await create_account(ctx)
-        if random.randint(1,200) == 1 or ctx.author.display_name.lower() == "mechahater":
+        elif random.randint(1,200) == 1 or ctx.author.display_name.lower() == "mechahater":
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
                 icon_url=ctx.author.display_avatar.url,
@@ -446,7 +448,7 @@ def setup(client) -> commands.Cog:
                 {"$set": {"economy.wallet": 0}},
             )
             return await ctx.reply(embed=embed)
-        if percentage > 25:
+        elif percentage > 25:
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
                 icon_url=ctx.author.display_avatar.url,
@@ -1042,7 +1044,7 @@ def setup(client) -> commands.Cog:
 
     @eco.command(aliases=["sh", "buy"], description="Buy items from the shop!", name="shop")
     @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please try again in `{strfdelta(datetime.timedelta(seconds=delay), '{seconds}s')}`!"))
-    async def shop(ctx, item:str=None):
+    async def shop(ctx, item:str=None, amount:int=1):
         if not item:
             embed = voltage.SendableEmbed(
                 title=ctx.author.display_name,
@@ -1069,7 +1071,7 @@ Golden Egg - `5000`
                     "form",
                     "resueme",
                 ]):
-                    await buy_item(ctx, "Resume", 250)
+                    await buy_item(ctx, "Resume", 250, amount)
                 elif any(x in item.lower() for x in [
                     "gedd",
                     "gegg",
@@ -1080,7 +1082,7 @@ Golden Egg - `5000`
                     "egg",
                     "ge",
                 ]):
-                    await buy_item(ctx, "Golden Egg", 5000)
+                    await buy_item(ctx, "Golden Egg", 5000, amount)
                 elif any(x in item.lower() for x in [
                     "pb",
                     "playboi",
@@ -1090,7 +1092,7 @@ Golden Egg - `5000`
                     "playb",
                     "pboy",
                 ]):
-                    await buy_item(ctx, "Playboy", 1000)
+                    await buy_item(ctx, "Playboy", 1000, amount)
             else:
                 await create_account(ctx)
 
@@ -1200,5 +1202,100 @@ Golden Egg - `5000`
 
         if (await userdb.find_one({"userid": ctx.author.id})) is None:
             await create_account(ctx)
+
+
+    unusable_items = ["resume"]  # Add more items if needed
+
+    async def useitem(ctx, item:str, amount:str="1"):
+        am = int(await parse_amount(ctx, amount))
+        if am < 1:
+            embed = voltage.SendableEmbed(
+                title="Error",
+                description="Invalid amount specified. Please specify an amount like `100` or `1k` or `1m`",
+                color="#FF0000"
+            )
+            return await ctx.reply(embed=embed)
+        user = await userdb.find_one({"userid": ctx.author.id})
+        if user is None:
+            embed = voltage.SendableEmbed(
+                title="Error",
+                description="You dont have a bank account registered in our database! Would you like me to create one?",
+                color="#FF0000",
+            )
+            return await ctx.send(embed=embed)
+        items = user["economy"]["data"]["inventory"]
+        if item not in items:
+            embed = voltage.SendableEmbed(
+                title="Error",
+                description=f"You don't have {item}!",
+                color="#FF0000",
+            )
+            return await ctx.send(embed=embed)
+        elif items[item] < 1:
+            embed = voltage.SendableEmbed(
+                title="Error",
+                description=f"You don't have enough {item}!",
+                color="#FF0000",
+            )
+            return await ctx.send(embed=embed)
+        elif item in unusable_items:
+            embed = voltage.SendableEmbed(
+                title="Error",
+                description=f"You can't use {item}!",
+                color="#FF0000",
+            )
+            return await ctx.send(embed=embed)
+        
+        # check what the item is
+        if item == "playboy":
+            if user["economy"]["data"]["inventory"]["playboy"] < 1:
+                embed = voltage.SendableEmbed(
+                    title="Error",
+                    description=f"You don't have any {item}!",
+                    color="#FF0000",
+                )
+                return await ctx.reply(embed=embed)
+            if random.randint(1, 100) < 90:
+                amt = (random.randint(1, 50) * user["levels"]["level"]) * round(am)
+            else:
+                amt = (random.randint(500, 1000) * user["levels"]["level"]) * round(am)
+                
+            await userdb.bulk_write([
+                pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.data.inventory.playboy": -1}}),
+                pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": round(amt)}}),
+            ])
+            embed = voltage.SendableEmbed(
+                title="Success",
+                description=f"You used `x{round(am)}` **{item}**!{sep}You got ${round(amt):,} coins!",
+                color="#00FF00",
+            )
+            return await ctx.send(embed=embed)
+        elif item == "bank_loan" or item == "Bank Loan":
+            for i in user["economy"]["data"]["inventory"]:
+                if any(x in i for x in ["bank_loan", "Bank Loan"]) > 0: # Check if the item is in the inventory
+                    amt = (random.randint(10000, 50000) * user["levels"]["level"]) * round(am)
+                    await userdb.bulk_write([
+                        pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.data.inventory.Bank Loan": -1}}),
+                        pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": amt}}),
+                    ])
+                    embed = voltage.SendableEmbed(
+                        title="Success",
+                        description=f"You used `x{round(am)}` **{item}**!{sep}You got ${amt:,} coins!",
+                        color="#00FF00",
+                    )
+                    return await ctx.send(embed=embed)
+                else:
+                    embed = voltage.SendableEmbed(
+                        title="Error",
+                        description=f"You don't have any {item}!",
+                        color="#FF0000",
+                    )
+                    return await ctx.reply(embed=embed)
+        
+    
+
+    @eco.command(name="use", description="Use an item.", aliases=["eat", "drink", "useitem"])
+    async def use(ctx, item, amount="1"):
+        await useitem(ctx, item, amount)
 
     return eco

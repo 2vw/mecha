@@ -579,11 +579,14 @@ async def oldlevelstuff(message): # running this in the on_message event drops t
     print(await add_user(message))
 
 async def loggingstuff(message):
-  if message.server.id == message.author.id:
-    return
-  else:
-    return await add_user(message.author)
-
+  try:
+    if message.server.id == message.author.id:
+      return
+    else:
+      return await add_user(message.author)
+  except:
+    pass
+  
 async def levelstuff(message):
   try:
     if message.content.startswith("<@01FZB4GBHDVYY6KT8JH4RBX4KR>"):
