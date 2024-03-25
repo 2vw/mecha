@@ -152,6 +152,9 @@ async def parse_amount(ctx, amount, bank=False):
                     )
                     return await ctx.reply(embed=embed)
                 return econ * (float(amount.replace("%", "")) / 100)
+            elif amount.lower() in ["a", "all", "everything", "max"]:
+                amount = user["economy"]["bank"]
+                return amount
             elif "k" in amount.lower() or "thousand" in amount.lower():
                 return 1000 * int(amount.replace("k", "").replace("thousand", "").replace(" ", ""))
             elif "m" in amount.lower() or "mil" in amount.lower() or "million" in amount.lower():
@@ -528,8 +531,10 @@ def setup(client) -> commands.Cog:
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def deposit(ctx, *, amount: str):
         if (await userdb.find_one({"userid": ctx.author.id})):
-            amt = await parse_amount(ctx, amount, False)
+            amt = (await parse_amount(ctx, amount, False))
             if amt is None:
+                print(amt)
+                print(amount)
                 embed = voltage.SendableEmbed(
                     title=ctx.author.display_name,
                     icon_url=ctx.author.display_avatar.url,
@@ -538,6 +543,14 @@ def setup(client) -> commands.Cog:
                 )
                 await ctx.reply(embed=embed)
                 return
+            elif amt < 0:
+                embed = voltage.SendableEmbed(
+                    title=ctx.author.display_name,
+                    icon_url=ctx.author.display_avatar.url,
+                    description="Please enter a valid amount!",
+                    color="#FF0000",
+                )
+                return await ctx.reply(embed=embed)
             userdata = (await userdb.find_one({"userid": ctx.author.id}))["economy"]["wallet"]
             if userdata > 0:
                 if amt > userdata:
