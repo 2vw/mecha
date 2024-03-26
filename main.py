@@ -763,6 +763,11 @@ async def on_message_error(error: Exception, message):
       colour="#516BF2"
     )
     return await message.reply(message.author.mention, embed=embed)
+  elif isinstance(error, PermissionError):
+    try:
+      return await message.reply("I don't have permission to do that!", delete_after=3)
+    except:
+      pass
   else:
     raise(error)
 

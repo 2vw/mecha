@@ -267,7 +267,10 @@ def setup(client) -> commands.Cog:
 
     async def create_account(ctx):
         await ctx.send("You dont have a bank account registered in our database! I can resgister you now, is that okay? *(Yes/No)*")
-        message = await client.wait_for("message", check=lambda message: message.author.id != client.user.id, timeout=15)
+        try:
+            message = await client.wait_for("message", check=lambda message: message.author.id != client.user.id, timeout=15)
+        except asyncio.TimeoutError:
+            return await ctx.send(f"{ctx.author.mention} | Timed out! Please try again!")
         if any(x in message.content.lower() for x in ["yes", "y", "yea", "yeah", "yup"]):
             return await ctx.send(await add_user(ctx.author))
         else:
