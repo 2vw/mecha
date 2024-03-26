@@ -200,19 +200,18 @@ import time
 async def upd():
     doc = await userdb.find({}).to_list(length=None)
     for i in doc:
-        await userdb.bulk_write(
-        [
-            pymongo.UpdateOne(
-            {'userid':i['userid']}, 
-            {'$set':
-                {
-                "economy.monthly": time.time()
-                }
-            }
-            ),
-        ]
-        )
-        print(f"Updated {i['username']}!")
+      try:
+        if i['economy']['data']['inventory']['bank_loan']:
+          bank = i['economy']['data']['inventory']['bank_loan']
+          await userdb.update_one({'userid': i['userid']}, {'$unset': {'economy.data.inventory.bank_loan': 1}})
+          if bank < 0:
+            bank = 0
+          await userdb.update_one({'userid': i['userid']}, {'$set': {'economy.data.inventory.Bank Loan': bank}})
+          print(f"Added {bank} bank notes to {i['username']}")
+      except KeyError:
+        pass
+        
+            
 
 
 async def update_level(user:voltage.User):

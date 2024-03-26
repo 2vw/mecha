@@ -1274,7 +1274,7 @@ Golden Egg - `5000`
                 amt = (random.randint(500, 1000) * user["levels"]["level"]) * round(am)
                 
             await userdb.bulk_write([
-                pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.data.inventory.playboy": -1}}),
+                pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.data.inventory.playboy": -int(am)}}),
                 pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": round(amt)}}),
             ])
             embed = voltage.SendableEmbed(
@@ -1288,7 +1288,7 @@ Golden Egg - `5000`
                 if any(x in i for x in ["bank_loan", "Bank Loan"]) > 0: # Check if the item is in the inventory
                     amt = (random.randint(10000, 50000) * user["levels"]["level"]) * round(am)
                     await userdb.bulk_write([
-                        pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.data.inventory.Bank Loan": -1}}),
+                        pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.data.inventory.Bank Loan": -int(am)}}),
                         pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": amt}}),
                     ])
                     embed = voltage.SendableEmbed(
