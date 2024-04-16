@@ -206,12 +206,25 @@ async def upd():
           await userdb.update_one({'userid': i['userid']}, {'$unset': {'economy.data.inventory.bank_loan': 1}})
           if bank < 0:
             bank = 0
+            print("Bank loan capped at 10m")
           await userdb.update_one({'userid': i['userid']}, {'$set': {'economy.data.inventory.Bank Loan': bank}})
           print(f"Added {bank} bank notes to {i['username']}")
       except KeyError:
         pass
         
-            
+
+async def cheater_beater():
+  while True:
+    doc = await userdb.find({}).to_list(length=None)
+    for i in doc:
+      try:
+        if i['economy']['bank'] > 200000000000 or i['economy']['wallet'] > 200000000000:
+          await userdb.update_one({'userid': i['userid']}, {'$set': {'economy.bank': 1000000}})
+          await userdb.update_one({'userid': i['userid']}, {'$set': {'economy.wallet': 0}})
+          print(f"{i['username']} is a stinkin' cheater, and has been reset as a result!")
+      except:
+        pass
+    await asyncio.sleep(60*60)
 
 
 async def update_level(user:voltage.User):
@@ -549,7 +562,7 @@ async def ready():
     print("Back online! Starting up again!")
     
   print(f"Connected to {len(client.servers)} servers and {len(client.users)} users!")
-  await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status(), do())
+  await asyncio.gather(update_stats(users=len(client.users), servers=len(client.servers)), update(), status(), do(), upd(), cheater_beater())
 
 @client.command()
 @limiter(5, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
