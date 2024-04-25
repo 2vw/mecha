@@ -34,7 +34,7 @@ curl -X PATCH -H "X-Session-Token: $token" -d "{ \"id:\": \"$roleid\", \"colour\
 
 """
 
-import random, motor, pymongo, json, time, asyncio, datetime, requests, pilcord
+import random, motor, pymongo, json, time, asyncio, datetime, requests, pilcord, logging
 import voltage, os
 from voltage.ext import commands
 from voltage.errors import CommandNotFound, NotBotOwner, NotEnoughArgs, NotEnoughPerms, NotFoundException, BotNotEnoughPerms, RoleNotFound, UserNotFound, MemberNotFound, ChannelNotFound, HTTPError 
@@ -44,6 +44,12 @@ from functools import wraps
 import motor.motor_asyncio
 from bardapi import BardAsync
 from revoltbots import RBL
+
+logging.basicConfig(
+  filename='app.log', 
+  level=logging.DEBUG, 
+  format='%(asctime)s - %(levelname)s - %(message)s'
+  )
 
 with open("json/config.json", "r") as f:
   config = json.load(f)
@@ -721,6 +727,7 @@ def log_exceptions(type, value, tb):
   sys.__excepthook__(type, value, tb) # calls default excepthook
 
 sys.excepthook = log_exceptions
+logger = logging.getLogger(__name__)
 
 # error handling shit
 @client.error("message")
@@ -782,7 +789,7 @@ async def on_message_error(error: Exception, message):
     except:
       pass
   else:
-    raise(error)
+    logger.error(error)
 
 
 # Cog loading schenanigans

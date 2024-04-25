@@ -884,7 +884,7 @@ def setup(client) -> commands.Cog:
         parsed_amount = await parse_amount(ctx, amount)
         if parsed_amount is None:
             return await ctx.reply("Please enter a valid amount!")
-        if parsed_amount <= 0:
+        if round(int(parsed_amount)) <= 0:
             embed = voltage.SendableEmbed(
                 title="Error!",
                 description="Please enter a positive amount to pay.",
@@ -901,15 +901,15 @@ def setup(client) -> commands.Cog:
             await ctx.reply(embed=embed)
             return
         sender_data = await userdb.find_one({"userid": ctx.author.id})
-        if sender_data and sender_data["economy"]["wallet"] >= amount:
+        if sender_data and round(sender_data["economy"]["wallet"]) >= round(parsed_amount):
             recipient_data = (await userdb.find_one({"userid": member.id}))
             if recipient_data:
                 await userdb.bulk_write([
-                    pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -amount}}),
-                    pymongo.UpdateOne({"userid": member.id}, {"$inc": {"economy.wallet": -amount}}),
-                    pymongo.UpdateOne({"userid": member.id}, {"$append": {"notifications.inbox": {
+                    pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -round(parsed_amount)}}),
+                    pymongo.UpdateOne({"userid": member.id}, {"$inc": {"economy.wallet": -round(parsed_amount)}}),
+                    pymongo.UpdateOne({"userid": member.id}, {"$set": {"notifications.inbox.3": {
                         "title": f"Payment from {ctx.author.display_name}",
-                        "message": f"{ctx.author.display_name} paid you {round(amount, 2):,} coins!",
+                        "message": f"{ctx.author.display_name} paid you `{round(parsed_amount):,}` coins!",
                         "date": time.time(),
                         "read": False,
                         "type": "member"
@@ -917,7 +917,7 @@ def setup(client) -> commands.Cog:
                 ])
                 embed = voltage.SendableEmbed(
                     title="Success!",
-                    description=f"You have successfully paid {round(amount, 2):,} to {member.display_name}.",
+                    description=f"You have successfully paid `{round(parsed_amount):,}` to {member.display_name}.",
                     colour="#198754"
                 )
                 await ctx.reply(embed=embed)
@@ -941,7 +941,7 @@ def setup(client) -> commands.Cog:
     async def withdraw(ctx, *, amount):
         if (await userdb.find_one({"userid": ctx.author.id})):
             userdata = await parse_amount(ctx, amount, True)
-            if userdata >= 0:
+            if userdata >= 0 and userdata <= (await userdb.find_one({"userid": ctx.author.id}))['economy']['bank']:
                 await userdb.bulk_write([
                     pymongo.UpdateOne(
                         {"userid": ctx.author.id},

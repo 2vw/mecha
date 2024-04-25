@@ -95,6 +95,12 @@ def setup(client) -> commands.Cog:
         await ctx.reply(embed=embed)
 
     @utility.command()
+    async def ping(ctx):
+        """Get the bot's ping!"""
+        # `{round((time.time() - ctx.message.created_at)*1000,2)}ms`
+        await ctx.reply(f"Pong!")
+
+    @utility.command()
     @limiter(10, on_ratelimited=lambda ctx, delay, *_1, **_2: ctx.send(f"You're on cooldown! Please wait `{round(delay, 2)}s`!"))
     async def stats(ctx):
         """Get some statistics up in here!"""
