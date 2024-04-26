@@ -5,6 +5,7 @@ import random
 import sys
 import time
 import traceback
+import logging
 
 import aiohttp
 import revolt
@@ -14,6 +15,13 @@ import json
 from helper.database import Database
 from helper.revolt_bots import RBList
 from host import alive
+
+
+logging.basicConfig(
+  filename='app.log',
+  level=logging.DEBUG,
+  format='%(asctime)s - %(levelname)s - %(message)s'
+  )
 
 with open("json/config.json", "r") as f:
     config = json.load(f)
@@ -384,7 +392,8 @@ class MyClient(commands.CommandsClient):
             except Exception:
                 pass
         else:
-            traceback.print_exception(type(error), error, error.__traceback__)
+            # traceback.print_exception(type(error), error, error.__traceback__)
+            logging.error(error)
             return
 
         return await ctx.message.reply(embed=embed)

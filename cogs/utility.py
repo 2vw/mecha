@@ -152,6 +152,12 @@ class Utility(commands.Cog):
         )  # fix the uptime formatting at some point I swear to god
         await ctx.send(embed=embed)
 
+    @commands.command()
+    async def ping(self, ctx):
+        """Get the bot's ping!"""
+        # `{round((time.time() - ctx.message.created_at)*1000,2)}ms`
+        await ctx.reply(f"Pong!")
+
     @commands.command(name="avatar", aliases=["av", "getav", "ua"])
     @commands.cooldown(1, 3, bucket=commands.BucketType.user)
     async def avatar(self, ctx, member: revolt.Member = None):

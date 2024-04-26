@@ -839,9 +839,10 @@ class Economy(commands.Cog):
     @commands.cooldown(1, 10, bucket=commands.BucketType.user)
     async def pay(self, ctx, member: revolt.Member, amount: str):
         """Pay another user from your wallet!"""
-        parsed_amount = await parse_amount(ctx, amount)
+        parsed_amount = round(await parse_amount(ctx, amount), 2)
         if parsed_amount is None:
             return await ctx.reply("Please enter a valid amount!")
+
         if parsed_amount <= 0:
             embed = revolt.SendableEmbed(
                 title="Error!",
@@ -859,17 +860,17 @@ class Economy(commands.Cog):
             await ctx.reply(embed=embed)
             return
         sender_data = await self.client.db_client.get_user(ctx.author)
-        if sender_data and sender_data["economy"]["wallet"] >= amount:
+        if sender_data and sender_data["economy"]["wallet"] >= parsed_amount:
             recipient_data = await self.client.db_client.get_user(member)
             if recipient_data:
                 await self.client.db_client.userdb.bulk_write(
                     [
-                        pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -amount}}),
-                        pymongo.UpdateOne({"userid": member.id}, {"$inc": {"economy.wallet": -amount}}),
+                        pymongo.UpdateOne({"userid": ctx.author.id}, {"$inc": {"economy.wallet": -parsed_amount}}),
+                        pymongo.UpdateOne({"userid": member.id}, {"$inc": {"economy.wallet": -parsed_amount}}),
                         pymongo.UpdateOne(
                             {"userid": member.id}, {"$append": {"notifications.inbox": {
                                 "title": f"Payment from {ctx.author.display_name}",
-                                "message": f"{ctx.author.display_name} paid you {round(amount, 2):,} coins!",
+                                "message": f"{ctx.author.display_name} paid you {parsed_amount:,} coins!",
                                 "date": time.time(),
                                 "read": False,
                                 "type": "member"
@@ -879,7 +880,7 @@ class Economy(commands.Cog):
                 )
                 embed = revolt.SendableEmbed(
                     title="Success!",
-                    description=f"You have successfully paid {round(amount, 2):,} to {member.display_name}.",
+                    description=f"You have successfully paid {parsed_amount:,} to {member.display_name}.",
                     colour="#198754"
                 )
                 await ctx.reply(embed=embed)
@@ -905,7 +906,7 @@ class Economy(commands.Cog):
         user_data = await self.client.db_client.get_user(ctx.author)
         if user_data:
             userdata = await parse_amount(ctx, amount, True)
-            if userdata >= 0:
+            if 0 <= userdata <= user_data['economy']['bank']:
                 await self.client.db_client.userdb.bulk_write(
                     [
                         pymongo.UpdateOne(
