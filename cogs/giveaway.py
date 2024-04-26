@@ -1,15 +1,15 @@
-import voltage, pymongo, os
-from voltage.ext import commands
+from revolt.ext import commands
 
-def setup(client) -> commands.Cog:
-    giveaway = commands.Cog(
-    "Giveaway",
-    "More command testing, use these if you want *basic* fun commands."
-    )
 
-    @giveaway.command()
-    async def giveawaystuffs(ctx):
+class Giveaway(commands.Cog):
+    def __init__(self, client):
+        self.client = client
+
+    @commands.command(hidden=True)
+    async def giveawaystuffs(self, ctx):
         """Adds you to the giveaway"""
         await ctx.reply("nuh uh :)")
 
-    return giveaway
+
+async def setup(client):
+    await client.add_cog(Giveaway(client))
