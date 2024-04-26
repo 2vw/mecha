@@ -12,6 +12,7 @@ from revolt.ext import commands
 
 import json
 from helper.database import Database
+from helper.revolt_bots import RBList
 from host import alive
 
 with open("json/config.json", "r") as f:
