@@ -1,4 +1,4 @@
-import json
+import json, requests
 
 import revolt
 from revoltbots import RBL

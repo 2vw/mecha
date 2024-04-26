@@ -23,6 +23,8 @@ logging.basicConfig(
   format='%(asctime)s - %(levelname)s - %(message)s'
   )
 
+sep = "\n"
+
 with open("json/config.json", "r") as f:
     config = json.load(f)
 
@@ -36,7 +38,7 @@ with open("json/data.json", "w") as r:
 
 class HelpCommand(commands.HelpCommand):
     async def send_help(self, ctx: commands.Context):
-        embed = voltage.SendableEmbed(
+        embed = revolt.SendableEmbed(
             title="Help",
             description=f"Use `{ctx.prefix}help <command>` to get more information on a command.",
             colour="#516BF2",
@@ -58,7 +60,7 @@ class HelpCommand(commands.HelpCommand):
 # will continue this later
 class Help(commands.HelpCommand):
     async def send_help(self, ctx: commands.Context):
-        embed = voltage.SendableEmbed(
+        embed = revolt.SendableEmbed(
             title="Help",
             description=f"Use `{ctx.prefix}help <command>` to get help for a command.",
             colour="#fff0f0",
@@ -82,7 +84,7 @@ class Help(commands.HelpCommand):
         return await ctx.reply(embed=embed)
 
     async def send_command_help(self, ctx: commands.Context, command: commands.Command):
-        embed = voltage.SendableEmbed(
+        embed = revolt.SendableEmbed(
             title=f"Help for {command.name}",
             colour="#0000ff",
             icon_url=client.user.display_avatar.url,
@@ -95,7 +97,7 @@ class Help(commands.HelpCommand):
         return await ctx.reply(embed=embed)
 
     async def send_cog_help(self, ctx: commands.Context, cog: commands.Cog):
-        embed = voltage.SendableEmbed(
+        embed = revolt.SendableEmbed(
             title=f"Help for {cog.name}",
             colour="#0000ff",
             icon_url=client.user.display_avatar.url,
@@ -109,7 +111,7 @@ class Help(commands.HelpCommand):
         return await ctx.reply(embed=embed)
 
     async def send_not_found(self, ctx: commands.Context, target: str):
-        embed = voltage.SendableEmbed(
+        embed = revolt.SendableEmbed(
             title="Help",
             description=f"`{ctx.prefix}{target} doesnt exist!`",
             colour="#fff0f0",

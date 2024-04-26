@@ -1,7 +1,5 @@
 ﻿# Welcome to Mecha
 
-Mecha is an innovative bot powered by the [Voltage](https://github.com/EnokiUN/Voltage) framework, designed to enhance your server experience with a variety of interactive features.
-
 ## Key Features
 
 - **Advanced Leveling System**: Foster community engagement through a sophisticated global leveling system that rewards user participation and interaction within the server.
