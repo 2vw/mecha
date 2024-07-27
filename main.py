@@ -802,5 +802,5 @@ for filename in os.listdir("./cogs"):
       print(e)
 
 while True:
-  alive() #yeah blah blah stolen from old Mecha but hey, it works so why not copy and paste it, we're developers.
-  client.run(config['TOKEN'], bot=True, banner=False) # Replace with your token in config, config.json to be exact, for everyone else, you know what this does stop fucking stalling pls :).
+  alive() #yeah blah blah stolen from old Mecha but hey, it works
+  client.run(config['TOKEN'], bot=True, banner=False) # Replace with your token in config, config.json to be exact

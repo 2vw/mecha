@@ -1162,7 +1162,7 @@ Golden Egg - `5000`
             msg = await ctx.reply(embed=embed)
             prize = 0
             if a == b == c == "7️⃣":
-                prize = 25_000_000
+                prize = amount * 500
             else:
                 if a == b:
                     prize = emojis.get(a, 0) * 2 * amount
